@@ -1119,7 +1119,8 @@ function readProfile(){
   const fail = m => { err.textContent=m; err.hidden=false; return null; };
   if (!age||!height||!weight) return fail("Fill in age, height and weight.");
   if (age<18) return fail("This app is for adults 18 and over. Calorie deficits aren't recommended for teenagers without a doctor's guidance.");
-  if (height<120||height>230||weight<35||weight>300) return fail("Check your height (cm) and weight (kg).");
+  if (height<120||height>230) return fail(`Height must be in centimetres, between 120 and 230. You entered ${height}. For example, 5'9" is about 175 cm.`);
+  if (weight<35||weight>300) return fail(`Weight must be in kilograms, between 35 and 300. You entered ${weight}. To convert from pounds, divide by 2.2.`);
   return {sex, age, height, weight, deficit, stepGoal};
 }
 function renderOnboarding(){
