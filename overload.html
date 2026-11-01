@@ -1103,7 +1103,7 @@ function profileForm(p){
   return `<div class="field"><span>Sex (the calorie formula differs)</span><div class="seg" role="group" id="sx"><button type="button" data-sex="male" aria-pressed="${p.sex==="male"}">Male</button><button type="button" data-sex="female" aria-pressed="${p.sex==="female"}">Female</button></div></div>
   <div class="grid2" style="grid-template-columns:repeat(3,1fr)">
     <label class="field"><span>Age</span><input type="number" id="pa" min="18" max="100" inputmode="numeric" value="${p.age}"></label>
-    <label class="field"><span>Height (cm)</span><input type="number" id="ph" min="120" max="230" inputmode="numeric" value="${p.height}"></label>
+    <label class="field"><span>Height</span><input type="text" id="ph" placeholder="cm or 5'9" autocomplete="off" value="${p.height}"></label>
     <label class="field"><span>Weight (kg)</span><input type="number" id="pw" min="35" max="300" step="0.1" inputmode="decimal" value="${p.weight}"></label>
   </div>
   <div class="field"><span>Daily deficit goal</span><div class="seg" role="group" id="dg">${[300,400,500].map(v=>`<button type="button" data-def="${v}" aria-pressed="${p.deficit===v}">${v} kcal</button>`).join("")}</div>
@@ -1111,15 +1111,31 @@ function profileForm(p){
   <label class="field"><span>Daily step goal</span><input type="number" id="ps" min="1000" step="500" inputmode="numeric" value="${p.stepGoal}"></label>
   <p id="perr" class="small" style="color:var(--red)" hidden></p>`;
 }
+// Height box takes cm, metres (1.80), feet and inches (5'9, 5ft 9, 5.9 = 5'9") or inches (69); returns cm or 0.
+function parseHeight(raw){
+  const s = String(raw).trim().toLowerCase().replace(/,/g, ".").replace(/[’‘′]/g, "'").replace(/[”“″]/g, '"');
+  const fi = s.match(/^(\d)\s*(?:'|ft|feet|foot)\s*(?:(\d{1,2}(?:\.\d+)?)\s*(?:"|''|in|inch|inches)?)?$/);
+  if (fi) return Math.round((+fi[1]*12 + +(fi[2]||0)) * 2.54);
+  const inch = s.match(/^(\d{2}(?:\.\d+)?)\s*(?:"|''|in|inch|inches)$/);
+  if (inch) return Math.round(+inch[1] * 2.54);
+  const m = s.match(/^(\d+(?:\.\d+)?)\s*(cm|m)?$/);
+  if (!m) return 0;
+  const n = +m[1];
+  if (m[2] === "m" || (n >= 1.2 && n < 2.5)) return Math.round(n * 100);
+  if (m[2] === "cm" || n >= 100) return Math.round(n);
+  if (n >= 4 && n < 8) { const [ft, inc=""] = m[1].split("."); return Math.round((+ft*12 + (+inc||0)) * 2.54); }
+  if (n >= 48 && n < 96) return Math.round(n * 2.54);
+  return Math.round(n);
+}
 function readProfile(){
   const sex = document.querySelector("[data-sex][aria-pressed=true]").dataset.sex;
   const deficit = +document.querySelector("[data-def][aria-pressed=true]").dataset.def;
-  const age=+$("#pa").value, height=+$("#ph").value, weight=+$("#pw").value, stepGoal=+$("#ps").value||8000;
+  const age=+$("#pa").value, height=parseHeight($("#ph").value), weight=+$("#pw").value, stepGoal=+$("#ps").value||8000;
   const err = $("#perr");
   const fail = m => { err.textContent=m; err.hidden=false; return null; };
-  if (!age||!height||!weight) return fail("Fill in age, height and weight.");
+  if (!age||!$("#ph").value.trim()||!weight) return fail("Fill in age, height and weight.");
   if (age<18) return fail("This app is for adults 18 and over. Calorie deficits aren't recommended for teenagers without a doctor's guidance.");
-  if (height<120||height>230) return fail(`Height must be in centimetres, between 120 and 230. You entered ${height}. For example, 5'9" is about 175 cm.`);
+  if (height<120||height>230) return fail(`Couldn't read that height. Enter it in cm (175) or feet and inches (5'9).`);
   if (weight<35||weight>300) return fail(`Weight must be in kilograms, between 35 and 300. You entered ${weight}. To convert from pounds, divide by 2.2.`);
   return {sex, age, height, weight, deficit, stepGoal};
 }
