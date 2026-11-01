@@ -138,6 +138,7 @@ textarea{resize:vertical;min-height:70px}
 .lesson:first-of-type{border-top:0}
 .lesson .n{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font:700 13px var(--f-data);background:var(--sunk);flex:none}
 .lesson.done .n{background:var(--green);color:#fff}
+.lesson .grow{flex:1;min-width:0}
 .ladder{display:flex;flex-direction:column;gap:6px}
 .rung{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:9px;font-size:14px}
 .rung.past{color:var(--ink-3);text-decoration:line-through;text-decoration-color:var(--line)}
@@ -469,6 +470,31 @@ const COURSES = {
       "Discipline isn't only the gym and the kitchen — it's attention. The same phone that pulls you out of a workout pulls you out of everything.",
       "Cut the frictionless distractions: notifications off while you train, phone face-down at meals, one screen at a time.",
       {key:"Motivation fades by evening; a good system doesn't. Make focus the default, not a daily fight."}]}
+  ]},
+  free:{title:"5-Day Kickoff", sub:"A free starter course: one small action a day to get discipline moving", lessons:[
+    {t:"Day 1: Make one promise", b:[
+      "Most people start by changing everything at once: new diet, new gym plan, new sleep schedule. By day four it has all collapsed, and it feels like proof that they lack discipline.",
+      "Start with one promise instead. Pick the single habit that would make the biggest difference this week, such as hitting your step goal, hitting your protein, or training three times.",
+      {key:"Today's action: choose your one promise and write it down in a single sentence."},
+      "One promise you keep builds more self-trust than five you break."]},
+    {t:"Day 2: Shrink it until it's easy", b:[
+      "A promise only helps if you keep it on your worst day, not just your best one. So make a minimum version that takes almost no willpower.",
+      "If your promise is 8,000 steps, the minimum might be a 10-minute walk after dinner. If it's training, the minimum might be putting on your gym clothes and doing one warm-up set.",
+      {key:"Today's action: write the smallest version of your promise that you could do even when tired, busy or low."},
+      "On good days you'll do more. On bad days the minimum keeps the streak alive, and the streak is what builds the habit."]},
+    {t:"Day 3: Attach it to something you already do", b:[
+      "Habits stick when they have a clear trigger. \"I'll walk more\" has no trigger. \"After I eat lunch, I walk for 10 minutes\" does.",
+      "Look at your day for something that already happens without fail: waking up, your morning tea, arriving home, brushing your teeth. Attach your promise to it.",
+      {key:"Today's action: finish the sentence \"After I ___, I will ___.\""}]},
+    {t:"Day 4: Remove one temptation", b:[
+      "Willpower is limited, and every time you resist something you use some of it. Disciplined people don't resist more. They set things up so they need to resist less.",
+      "Find the one thing that most often knocks you off plan. It might be snacks on the counter, your phone by the bed, or skipping meal prep. Move it, hide it or prepare for it.",
+      {key:"Today's action: change one thing in your surroundings so the right choice becomes the easy one."}]},
+    {t:"Day 5: Review and keep going", b:[
+      "Look back at the last four days honestly, without judging yourself. Which days did you keep your promise? What got in the way on the days you didn't?",
+      "Keep what worked. Change one thing that didn't, such as an earlier time, a smaller minimum or a better trigger. Then commit to the next seven days.",
+      {key:"Today's action: write one thing to keep and one thing to change, then start week two."},
+      "This is the whole method: small promises, kept daily, adjusted weekly. The full Psychology course goes deeper into each step."]}
   ]}
 };
 
@@ -837,8 +863,17 @@ function renderPsych(){
     <h2 style="font:900 28px/1 var(--f-display);text-transform:uppercase;letter-spacing:.02em;margin:8px 0 10px;color:var(--ink)">Rewire your psychology</h2>
     <p class="small" style="color:var(--ink-2)">Discipline is trainable, like a muscle. ${c.lessons.length} lessons that move you from undisciplined to disciplined — one small win at a time.</p>
   </section>`;
+  const fc = COURSES.free, fdone = fc.lessons.filter((_,i)=>S.done["free"+i]).length;
+  const freeCard = `
+  <section class="card">
+    <div class="card-head"><h2 style="font-size:24px">${fc.title}</h2><span class="pill blue">Free</span></div>
+    <p class="small muted" style="margin:-4px 0 2px">${fc.sub}</p>
+    <div class="row between" style="margin:14px 0 6px"><span class="label">Progress</span><span class="small num">${fdone} / ${fc.lessons.length}</span></div>
+    <div class="bar"><i style="width:${fdone/fc.lessons.length*100}%;background:var(--green)"></i></div>
+    <div style="margin-top:8px">${fc.lessons.map((l,i)=>`<button class="lesson ${S.done["free"+i]?"done":""}" data-course="free" data-lesson="${i}"><span class="n">${S.done["free"+i]?"✓":i+1}</span><span class="grow" style="font-weight:600">${esc(l.t)}</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--ink-3)"><path d="M9 6l6 6-6 6"/></svg></button>`).join("")}</div>
+  </section>`;
   if (!S.premium){
-    $("#view").innerHTML = intro + `
+    $("#view").innerHTML = intro + freeCard + `
     <section class="card" style="text-align:center">
       <div style="width:54px;height:54px;border-radius:50%;background:var(--sunk);display:grid;place-items:center;margin:4px auto 12px;font-size:24px" aria-hidden="true">🔒</div>
       <div class="label" style="color:var(--red)">Enigma Premium</div>
@@ -851,13 +886,13 @@ function renderPsych(){
     </section>`;
     return;
   }
-  $("#view").innerHTML = intro + `
+  $("#view").innerHTML = intro + freeCard + `
   <section class="card">
     <div class="card-head"><h2 style="font-size:24px">Core lessons</h2><span class="pill green">Premium ✓</span></div>
     <p class="small muted" style="margin:-4px 0 2px">${c.sub}</p>
     <div class="row between" style="margin:14px 0 6px"><span class="label">Progress</span><span class="small num">${done} / ${c.lessons.length}</span></div>
     <div class="bar"><i style="width:${done/c.lessons.length*100}%;background:var(--green)"></i></div>
-    <div style="margin-top:8px">${c.lessons.map((l,i)=>`<button class="lesson ${S.done["mind"+i]?"done":""}" data-lesson="${i}"><span class="n">${S.done["mind"+i]?"✓":i+1}</span><span class="grow" style="font-weight:600">${esc(l.t)}</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--ink-3)"><path d="M9 6l6 6-6 6"/></svg></button>`).join("")}</div>
+    <div style="margin-top:8px">${c.lessons.map((l,i)=>`<button class="lesson ${S.done["mind"+i]?"done":""}" data-course="mind" data-lesson="${i}"><span class="n">${S.done["mind"+i]?"✓":i+1}</span><span class="grow" style="font-weight:600">${esc(l.t)}</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--ink-3)"><path d="M9 6l6 6-6 6"/></svg></button>`).join("")}</div>
     <button class="btn ghost sm" data-lock-premium style="margin-top:12px;color:var(--ink-3)">Lock again (demo)</button>
   </section>`;
 }
@@ -954,7 +989,7 @@ function bindChart(ws){
 
 /* ---------- home / dashboard ---------- */
 function greeting(){ const h=new Date().getHours(); return h<12?"Good morning":h<17?"Good afternoon":"Good evening"; }
-function nextLesson(){ const order = S.premium ? ["train","mind"] : ["train"]; for(const ck of order){ const c=COURSES[ck]; for(let i=0;i<c.lessons.length;i++) if(!S.done[ck+i]) return {ck,i,t:c.lessons[i].t,course:c.title}; } return null; }
+function nextLesson(){ const order = S.premium ? ["train","free","mind"] : ["train","free"]; for(const ck of order){ const c=COURSES[ck]; for(let i=0;i<c.lessons.length;i++) if(!S.done[ck+i]) return {ck,i,t:c.lessons[i].t,course:c.title}; } return null; }
 function renderHome(){
   cur=TODAY; seedSocial();
   const n=numbers(TODAY), p=n.p, d=n.d, eat=n.eat, prot=n.prot, over=n.remaining<0;
@@ -1299,7 +1334,7 @@ document.addEventListener("click", e => {
   if (ds.liveJoin !== undefined){ const n=($("#lbname").value||"").trim().replace(/\s+/g," "); if(!n){ toast("Add a name to show on the board"); return; } if(!window.convex){ toast("Can't reach the live board right now"); return; } S.social.live={id:newPlayerId(), name:n.slice(0,24)}; save(); liveStart(); renderCompete(); toast("You're on the live board"); return; }
   if (ds.liveLeave !== undefined){ const id=S.social.live.id; const c=live.client; if(c) c.mutation(convex.anyApi.leaderboard.leave,{playerId:id}).catch(()=>{}).finally(()=>c.close()); if(live.unsub) live.unsub(); live={client:null, rows:null, unsub:null, week:""}; delete S.social.live; save(); renderCompete(); toast("Left the live board"); return; }
   if (ds.cheer){ const f=S.social.friends.find(x=>x.id===ds.cheer) || (live.rows||[]).find(x=>x.id===ds.cheer); const lbl=ds.label==="Cheer"?"Cheered":"Nudged"; S.social.acted.map[ds.cheer]=lbl; save(); renderCompete(); toast(`${lbl} ${f.name}`); return; }
-  if (ds.lesson){ openLesson(+ds.lesson); return; }
+  if (ds.lesson){ if (ds.course) learnTab = ds.course; openLesson(+ds.lesson); return; }
   if (ds.homeCk){ if(ds.homeCk==="mind" && !S.premium){ tab="psych"; render(); return; } learnTab=ds.homeCk; openLesson(+ds.homeI); return; }
   if (ds.complete){ const k=learnTab+ds.complete; S.done[k]=!S.done[k]; save(); $("#layer").innerHTML=""; render(); return; }
   if (ds.lad){ const L=LADDERS[ds.lad]; S.ladders[ds.lad]=Math.max(0,Math.min(L.steps.length-1,S.ladders[ds.lad]+ +ds.dir)); save(); renderLearn(); return; }
