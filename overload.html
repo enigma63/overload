@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html><html lang="en"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Enigma</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -212,6 +212,40 @@ textarea{resize:vertical;min-height:70px}
 .teamrow .tn{flex:1;min-width:0}
 @media (max-width:380px){.hero{grid-template-columns:1fr;justify-items:center}.hero-stats{width:100%}}
 
+/* restyle: one lime accent for primary actions and progress, rounder cards, larger labels */
+:root{--accent:#9BCB12; --accent-ink:#4A6B00; --on-accent:#141A05; --accent-soft:#EEF7D6; --r:20px; --r-sm:12px}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--accent:#C6F432; --accent-ink:#C6F432; --on-accent:#121608; --accent-soft:#232B12}}
+:root[data-theme="dark"]{--accent:#C6F432; --accent-ink:#C6F432; --on-accent:#121608; --accent-soft:#232B12}
+.card{padding:18px}
+.btn{border-radius:12px}
+.btn.red{background:var(--accent);border-color:var(--accent);color:var(--on-accent);font-weight:700}
+.chipbtn[aria-pressed="true"]{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.nav button{font-size:11px;gap:3px}
+.nav svg{stroke-width:1.75}
+.nav button[aria-current="page"] svg{color:var(--accent-ink)}
+.lb .item.you .av{background:var(--accent)!important;color:var(--on-accent)}
+input[aria-invalid="true"]{border-color:var(--red);box-shadow:0 0 0 1px var(--red)}
+.fab{position:fixed;z-index:7;right:max(16px, calc(50% - 224px));bottom:calc(84px + env(safe-area-inset-bottom,0px));width:58px;height:58px;border-radius:50%;border:0;
+  background:var(--accent);color:var(--on-accent);display:grid;place-items:center;box-shadow:0 8px 24px rgb(0 0 0 / .35), 0 0 0 4px var(--bg)}
+.fab svg{width:26px;height:26px}
+.qa-sheet{display:flex;flex-direction:column;gap:8px}
+main{padding-bottom:168px}
+.setck[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.setrow.done{background:var(--accent-soft)}
+.gymhead{display:grid;grid-template-columns:1fr auto;gap:14px;align-items:center}
+.gh-clock{font:900 58px/1 var(--f-display);color:var(--accent-ink);margin:4px 0 0;letter-spacing:.01em}
+.gh-ring{width:92px;height:92px}
+.gh-actions{grid-column:1/-1;gap:8px;flex-wrap:nowrap}
+.exchips{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.exchips .chipbtn{white-space:nowrap;flex:none}
+.bodymap{display:grid;grid-template-columns:1fr 1fr;gap:8px;max-width:360px;margin:0 auto}
+.bodymap svg{width:100%;height:auto;display:block}
+.qa-sheet button{display:flex;align-items:center;gap:14px;width:100%;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:var(--r-sm);padding:14px;color:var(--ink)}
+.qa-sheet .ic{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent-ink);flex:none}
+.qa-sheet .ic svg{width:20px;height:20px}
+.qa-sheet .t{font-weight:700}
+.qa-sheet .d{font-size:13px;color:var(--ink-3)}
+
 /* desktop: sidebar nav, wide two-column content, centred dialogs */
 @media (min-width:960px){
   :root{--side:232px}
@@ -235,6 +269,7 @@ textarea{resize:vertical;min-height:70px}
   .composer{bottom:16px}
   .toast{bottom:32px;left:calc(50% + var(--side)/2)}
   .gymbar{bottom:24px;left:calc(50% + var(--side)/2)}
+  .fab{right:32px;bottom:32px}
   .scrim{align-items:center;padding:32px}
   .sheet{max-width:600px;max-height:88vh;border-radius:20px;padding:24px}
   .onb-in{max-width:560px;padding-top:56px}
@@ -264,6 +299,7 @@ textarea{resize:vertical;min-height:70px}
 </div></nav>
 
 <div id="layer"></div>
+<button class="fab" id="fab" data-quick aria-label="Quick add" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
 
 <script src="https://cdn.jsdelivr.net/npm/convex@1.48.0/dist/browser.bundle.js"></script>
 <script>
@@ -576,7 +612,7 @@ function numbers(k=cur){
 function render(){
   if (!S.profile){ renderOnboarding(); return; }
   $("#layer").innerHTML = $("#layer").querySelector(".scrim") ? $("#layer").innerHTML : "";
-  document.querySelectorAll("#nav button").forEach(b => b.setAttribute("aria-current", b.dataset.tab===tab ? "page" : "false"));
+  document.querySelectorAll("#nav button").forEach(b => b.setAttribute("aria-current", b.dataset.tab===(tab==="gym"?"today":tab) ? "page" : "false"));
   const dt = new Date(cur+"T12:00:00");
   const diff = Math.round((Date.parse(TODAY)-Date.parse(cur))/864e5);
   $("#dayLabel").textContent = diff===0 ? "Today" : diff===1 ? "Yesterday" : dt.toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"});
@@ -585,6 +621,7 @@ function render(){
   $(".daynav").hidden = !(tab==="today" || tab==="food" || tab==="checkin");
   ({home:renderHome, today:renderToday, compete:renderCompete, psych:renderPsych, food:renderFood, checkin:renderCheckin, learn:renderLearn, progress:renderProgress, gym:renderGym})[tab]();
   gymBar();
+  $("#fab").hidden = tab==="gym" || !!gym().active;
 }
 
 function ringSVG(frac, color){
@@ -609,10 +646,10 @@ function renderToday(){
   const lowWarn = (isPast && eat.kcal>0 && eat.kcal < floorKcal(p)) ? `<div class="verdict warn"><span>You ate ${fmt(eat.kcal)} kcal, below the ${fmt(floorKcal(p))} kcal minimum. Very low days cost muscle and make the next day harder. Aim higher tomorrow.</span></div>` : "";
   const pf = Math.min(1, eat.protein/prot.max);
   const pPill = eat.protein >= prot.min ? `<span class="pill blue">Target hit</span>` : `<span class="pill">${fmt(prot.min-eat.protein)} g to go</span>`;
-  const stepK = stepKcal(p,d.steps);
+  const stepK = burn.steps;
   seedSocial();
-  const frows = [{steps:d.steps,you:true}, ...S.social.friends.map(f=>({steps:f.today}))].sort((a,b)=>b.steps-a.steps);
-  const frankTxt = `${ord(frows.findIndex(r=>r.you)+1)} of ${frows.length} among friends today`;
+  const crT = compRows("today");
+  const frankTxt = `${ord(crT.idx+1)} of ${crT.rows.length} among ${crT.who} today`;
   const acts = d.activities.length ? d.activities.map(a=>`<div class="item"><span class="dot" style="background:var(--green)"></span><div class="grow"><div class="name">${esc(a.name)}</div><div class="meta">${a.minutes} min</div></div><span class="num">${fmt(a.kcal)} kcal</span><button class="x" data-del-act="${a.id}" aria-label="Remove ${esc(a.name)}">✕</button></div>`).join("")
     : `<div class="empty">No workouts logged. Add one here or describe your day in Check-in.</div>`;
   const favActsList = (S.favActs||[]).map(id=>MET.find(m=>m.id===id)).filter(Boolean);
@@ -622,12 +659,12 @@ function renderToday(){
   $("#view").innerHTML = `
   <section class="card">
     <div class="hero">
-      <div class="ring">${ringSVG(eat.kcal/Math.max(1,n.target), over?'var(--red)':'var(--ink)')}
+      <div class="ring">${ringSVG(eat.kcal/Math.max(1,n.target), over?'var(--red)':'var(--accent)')}
         <div class="mid"><div class="label">${over?'Over by':'Left to eat'}</div><div class="big num" style="font-family:var(--f-display)">${fmt(Math.abs(n.remaining))}</div><div class="small muted">kcal</div></div></div>
       <div class="hero-stats">
         <div class="hs"><span class="k"><span class="dot" style="background:var(--red)"></span>Eaten</span><span class="v">${fmt(eat.kcal)}</span></div>
         <div class="hs"><span class="k"><span class="dot" style="background:var(--ink-2)"></span>Burned</span><span class="v">${fmt(burn.total)}</span></div>
-        <div class="hs"><span class="k"><span class="dot" style="background:var(--green)"></span>Deficit</span><span class="v" style="color:${n.deficit>=n.goalDef?'var(--green)':'var(--ink)'}">${n.deficit>=0?'−':'+'}${fmt(Math.abs(n.deficit))}</span></div>
+        <div class="hs"><span class="k"><span class="dot" style="background:var(--green)"></span>${n.deficit>=0?'Deficit':'Surplus'}</span><span class="v" style="color:${n.deficit>=n.goalDef?'var(--green)':n.deficit<0?'var(--red)':'var(--ink)'}">${fmt(Math.abs(n.deficit))}${n.deficit>=n.goalDef?' ✓':''}</span></div>
         <div class="hs"><span class="k">Goal deficit</span><span class="v">${fmt(n.goalDef)}</span></div>
       </div>
     </div>
@@ -707,16 +744,16 @@ function renderFood(){
   const d = day(), t = dayTotals(d);
   const list = d.foods.length ? d.foods.map(f=>`<div class="item"><span class="dot" style="background:var(--red)"></span><div class="grow"><div class="name">${esc(f.name)}</div><div class="meta">${esc(f.serving||"")} ${f.source?`· ${esc(f.source)}`:""}</div></div><div style="text-align:right"><div class="num">${fmt(f.kcal)}</div><div class="meta num">${r0(f.protein)} g P</div></div><button class="x" data-del-food="${f.id}" aria-label="Remove ${esc(f.name)}">✕</button></div>`).join("")
     : `<div class="empty">Nothing logged yet for this day.</div>`;
-  const modes = [["search","Search"],["barcode","Scan"],["photo","Snap"],["describe","Describe"],["custom","Custom"]];
+  const modes = [["search","Search"],["barcode","Barcode"],["photo","Photo"],["describe","Describe"],["custom","Custom"]];
   $("#view").innerHTML = `
+  <section class="card">
+    <div class="card-head"><h2>Logged</h2><span class="small muted num">${fmt(t.kcal)} kcal · ${r0(t.protein)} g protein</span></div>
+    <div class="list">${list}</div>
+  </section>
   <section class="card">
     <div class="card-head"><h2>Add food</h2></div>
     <div class="seg" role="group" aria-label="How to add food">${modes.map(([m,l])=>`<button data-fmode="${m}" aria-pressed="${foodMode===m}">${l}</button>`).join("")}</div>
     <div id="fbody" style="margin-top:14px">${foodBody()}</div>
-  </section>
-  <section class="card">
-    <div class="card-head"><h2>Logged</h2><span class="small muted num">${fmt(t.kcal)} kcal · ${r0(t.protein)} g protein</span></div>
-    <div class="list">${list}</div>
   </section>`;
   if (foodMode==="search") filterFoods("");
 }
@@ -854,8 +891,8 @@ function renderLearn(){
     <div class="bar"><i style="width:${done/c.lessons.length*100}%;background:var(--green)"></i></div>
     <div style="margin-top:8px">${c.lessons.map((l,i)=>`<button class="lesson ${S.done[learnTab+i]?"done":""}" data-lesson="${i}"><span class="n">${S.done[learnTab+i]?"✓":i+1}</span><span class="grow" style="font-weight:600">${esc(l.t)}</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--ink-3)"><path d="M9 6l6 6-6 6"/></svg></button>`).join("")}</div>
   </section>
-  ${learnTab==="train"?ladders()+planner():""}
-  ${exLibrary()}`;
+  ${exLibrary()}
+  ${learnTab==="train"?ladders()+planner():""}`;
   exLoad();
 }
 
@@ -929,18 +966,21 @@ function renderGym(){
   const a=gym().active;
   if (!a){ tab="today"; render(); return; }
   exLoad();
+  const total=a.ex.reduce((n,x)=>n+x.sets.length,0), done=a.ex.reduce((n,x)=>n+x.sets.filter(s=>s.done).length,0);
   $("#view").innerHTML = `
-  <div class="row between" style="flex-wrap:nowrap">
-    <div class="hello"><div class="label">Gym session</div><h1 class="num" id="gymclock">${clock(Date.now()-a.start)}</h1></div>
-    <div class="row" style="gap:6px;flex-wrap:nowrap"><button class="btn ghost" data-gym-discard>Discard</button><button class="btn red" data-gym-finish>Finish</button></div>
-  </div>
+  <section class="card span gymhead">
+    <div><div class="label">Time in gym</div><h1 class="gh-clock num" id="gymclock">${clock(Date.now()-a.start)}</h1></div>
+    <div class="ring gh-ring">${ringSVG(total?done/total:0, "var(--accent)")}<div class="mid"><div class="num" style="font:800 22px/1 var(--f-display)">${done}/${total}</div><div class="small muted">sets</div></div></div>
+    <div class="row gh-actions"><button class="btn ghost" data-gym-discard>Discard</button><button class="btn red" data-gym-finish style="flex:1">Finish workout</button></div>
+  </section>
+  ${a.ex.length>1?`<div class="exchips">${a.ex.map((x,i)=>{const d=x.sets.filter(s=>s.done).length; return `<button class="chipbtn" data-gjump="${i}" aria-pressed="${d>0&&d===x.sets.length}">${esc(x.n.replace(/ - .*$/,""))} <span class="num" style="opacity:.7">${d}/${x.sets.length}</span></button>`;}).join("")}</div>`:""}
   <div id="restbar">${restBar()}</div>
   ${a.ex.map(gymCard).join("")}
   <div><button class="btn block" data-gym-pick-open style="border-style:dashed;padding:14px">+ Add exercise</button></div>`;
 }
 function gymCard(x, i){
   const prev=lastSets(x.id), best=bestSet(x.id);
-  return `<section class="card">
+  return `<section class="card" id="gx${i}">
     <div class="card-head" style="margin-bottom:4px"><h2 style="font-size:20px">${esc(x.n)}</h2><button class="x" data-gym-rmex="${i}" aria-label="Remove ${esc(x.n)}">✕</button></div>
     <p class="small muted">${best?`Best: ${setStr(best)}`:"First time logging this one"}</p>
     <div class="setrow sethead"><span>Set</span><span>Previous</span><span>kg</span><span>Reps</span><span></span></div>
@@ -977,7 +1017,7 @@ function gymSetDone(i, j){
 }
 function gymFinish(){
   const g=gym(), a=g.active;
-  const ex=a.ex.map(x=>({id:x.id, n:x.n, sets:x.sets.filter(s=>s.done).map(({kg,reps,pr})=>({kg,reps,pr:!!pr}))})).filter(x=>x.sets.length);
+  const ex=a.ex.map(x=>({id:x.id, n:x.n, p:x.p||[], s:x.s||[], sets:x.sets.filter(s=>s.done).map(({kg,reps,pr})=>({kg,reps,pr:!!pr}))})).filter(x=>x.sets.length);
   if (!ex.length){ toast("Tick off at least one set first"); return; }
   const end=Date.now(), mins=Math.max(1, r0((end-a.start)/60000)), met=5.0;
   const kcal=r0(activityKcal(S.profile, met, mins));
@@ -1000,29 +1040,48 @@ function gymFinish(){
     <p class="small muted">Added to today's workouts, so your calorie burn is already updated.</p>
     <button class="btn red block" data-close>Done</button></div></div>`;
 }
-let gpQ="";
+function openQuick(){
+  const it=(attr,icon,t,d)=>`<button ${attr}><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${icon}</svg></span><span><span class="t">${t}</span><br><span class="d">${d}</span></span></button>`;
+  $("#layer").innerHTML = `<div class="scrim" data-close><div class="sheet" role="dialog" aria-modal="true" aria-label="Quick add">
+    <div class="row between"><h3>Quick add</h3><button class="x" data-close aria-label="Close">✕</button></div>
+    <div class="qa-sheet">
+      ${it("data-gym-start",'<path d="M6 8v8M18 8v8M3 10v4M21 10v4M7 12h10"/>',"Start gym session","Log sets, reps and rest")}
+      ${it('data-qa="food"','<path d="M4 11h16a8 8 0 0 1-16 0z"/><path d="M8 7c0-2 2-2 2-4M13 7c0-2 2-2 2-4"/>',"Log food","Search, barcode, photo or describe it")}
+      ${it('data-open="act"','<circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3 2"/>',"Add activity","Running, football, boxing and more")}
+      ${it('data-qa="weight"','<path d="M3 20h18M5 16l4-5 4 3 6-8"/>',"Log weight","Keep your trend line accurate")}
+      ${it('data-qa="lib"','<path d="M4 5h16M4 12h16M4 19h10"/>',"Exercise library","876 exercises with how-to photos")}
+    </div></div></div>`;
+}
+let gpQ="", gpGroup="";
+const GYM_POPULAR = ["Barbell_Squat","Barbell_Bench_Press_-_Medium_Grip","Barbell_Deadlift","Standing_Military_Press","Bent_Over_Barbell_Row","Pullups","Pushups","Dumbbell_Bench_Press","Romanian_Deadlift","Wide-Grip_Lat_Pulldown","Seated_Cable_Rows","Incline_Dumbbell_Press","Side_Lateral_Raise","Barbell_Curl","Triceps_Pushdown","Dips_-_Triceps_Version","Leg_Press","Goblet_Squat","Dumbbell_Lunges","Barbell_Hip_Thrust","Seated_Leg_Curl","Leg_Extensions","Standing_Calf_Raises","Plank"];
 function openGymPicker(){
-  exLoad(); gpQ="";
+  exLoad(); gpQ=""; gpGroup="";
   $("#layer").innerHTML = `<div class="scrim" data-close><div class="sheet" role="dialog" aria-modal="true" aria-label="Add exercise">
     <div class="row between"><h3>Add exercise</h3><button class="x" data-close aria-label="Close">✕</button></div>
     <input type="search" id="gpq" placeholder="Search, e.g. bench press" autocomplete="off" aria-label="Search exercises">
+    <div class="row" style="gap:6px">${["",...Object.keys(EX_GROUPS)].map(g=>`<button class="chipbtn" data-gpgroup="${g}" aria-pressed="${g===""}">${g?exCap(g):"All"}</button>`).join("")}</div>
     <div id="gplist" class="list"><div class="empty">Loading exercises…</div></div></div></div>`;
   gpRender(); setTimeout(()=>$("#gpq")&&$("#gpq").focus(), 50);
 }
 function gpRender(){
   const el=$("#gplist"); if (!el || !EX) return;
-  const words=gpQ.toLowerCase().split(/\s+/).filter(Boolean);
+  const words=gpQ.toLowerCase().split(/\s+/).filter(Boolean), g=EX_GROUPS[gpGroup];
+  const inGroup=x=>!g || x.p.some(m=>g.includes(m));
   const recentIds=[...new Set(gym().log.slice().reverse().flatMap(w=>w.ex.map(x=>x.id)))].slice(0,8);
-  const recent=words.length?[]:recentIds.map(id=>EX.find(e=>e.id===id)).filter(Boolean);
-  const list=EX.filter(x=>words.every(w=>x.n.toLowerCase().includes(w)) && !recent.includes(x)).slice(0,40);
+  const recent=words.length?[]:recentIds.map(id=>EX.find(e=>e.id===id)).filter(x=>x&&inGroup(x));
+  const popular=words.length?[]:GYM_POPULAR.map(id=>EX.find(e=>e.id===id)).filter(x=>x&&inGroup(x)&&!recent.includes(x));
+  const list=EX.filter(x=>words.every(w=>x.n.toLowerCase().includes(w)) && inGroup(x) && !recent.includes(x) && !popular.includes(x)).slice(0,40);
   const row=x=>`<button class="item exrow" data-gym-pick="${esc(x.id)}">${x.k?`<img class="exthumb" src="${EX_IMG}${encodeURIComponent(x.id)}/0.jpg" alt="" loading="lazy">`:`<span class="exthumb"></span>`}<span class="grow"><span class="name">${esc(x.n)}</span><span class="meta">${esc(x.p.join(", "))} · ${esc(x.e)}</span></span><span class="pill">Add</span></button>`;
-  el.innerHTML = (recent.length?`<div class="label" style="margin:8px 0 2px">Recent</div>${recent.map(row).join("")}<div class="label" style="margin:14px 0 2px">All exercises</div>`:"")
-    + (list.length?list.map(row).join(""):`<div class="empty">No exercises match.</div>`);
+  const head=t=>`<div class="label" style="margin:14px 0 2px">${t}</div>`;
+  el.innerHTML = (recent.length?head("Recent")+recent.map(row).join(""):"")
+    + (popular.length?head("Popular")+popular.map(row).join(""):"")
+    + (words.length?"":head("All exercises"))
+    + (list.length?list.map(row).join(""):(recent.length||popular.length?"":`<div class="empty">No exercises match.</div>`));
 }
 function gymPick(id){
   const x=EX.find(e=>e.id===id), a=gym().active; if (!x||!a) return;
   const n=(lastSets(id)||[]).length||3;
-  a.ex.push({id, n:x.n, sets:Array.from({length:n},()=>({kg:null, reps:null, done:false}))});
+  a.ex.push({id, n:x.n, p:x.p, s:x.s, sets:Array.from({length:n},()=>({kg:null, reps:null, done:false}))});
   save(); $("#layer").innerHTML=""; renderGym();
 }
 function gymBar(){
@@ -1039,6 +1098,39 @@ setInterval(()=>{
   if ($("#resttime") && g.restEnd) $("#resttime").textContent=clock(g.restEnd-Date.now());
   gymBar();
 }, 1000);
+// Simplified front/back body: each shape is one muscle group from the exercise data.
+const BODY = {
+  front:[["shoulders","ellipse",36,52,11,9],["shoulders","ellipse",84,52,11,9],["chest","ellipse",49,64,11,9],["chest","ellipse",71,64,11,9],
+    ["biceps","ellipse",27,80,6,13],["biceps","ellipse",93,80,6,13],["forearms","ellipse",22,110,5,14],["forearms","ellipse",98,110,5,14],
+    ["abdominals","rect",48,76,24,40],["adductors","ellipse",60,140,4,12],["quadriceps","ellipse",49,152,9,26],["quadriceps","ellipse",71,152,9,26],["calves","ellipse",49,206,6,18],["calves","ellipse",71,206,6,18]],
+  back:[["traps","ellipse",60,46,17,7],["shoulders","ellipse",36,54,10,8],["shoulders","ellipse",84,54,10,8],["middle back","rect",52,58,16,22],["lats","ellipse",46,84,9,17],["lats","ellipse",74,84,9,17],
+    ["lower back","rect",52,96,16,16],["triceps","ellipse",27,80,6,13],["triceps","ellipse",93,80,6,13],["forearms","ellipse",22,110,5,14],["forearms","ellipse",98,110,5,14],
+    ["glutes","ellipse",51,126,10,9],["glutes","ellipse",69,126,10,9],["hamstrings","ellipse",50,160,9,22],["hamstrings","ellipse",70,160,9,22],["calves","ellipse",49,206,6,18],["calves","ellipse",71,206,6,18]]
+};
+function weekMuscles(){
+  const from=new Date(TODAY+"T12:00"); from.setDate(from.getDate()-6); const since=key(from), sets={};
+  for (const w of gym().log) if (w.date>=since) for (const x of w.ex){
+    const info=(x.p&&x.p.length)?x:(EX&&EX.find(e=>e.id===x.id))||{p:[],s:[]};
+    for (const m of info.p) sets[m]=(sets[m]||0)+x.sets.length;
+    for (const m of info.s||[]) sets[m]=(sets[m]||0)+x.sets.length*0.5;
+  }
+  return sets;
+}
+function bodySVG(side, sets, max){
+  const shape=([m,t,a,b,c,d])=>{ const v=sets[m]||0, o=v?0.35+0.65*Math.min(1,v/max):1, fill=v?"var(--accent)":"var(--sunk)";
+    return t==="rect" ? `<rect x="${a}" y="${b}" width="${c}" height="${d}" rx="6" fill="${fill}" fill-opacity="${o}"><title>${m}</title></rect>`
+      : `<ellipse cx="${a}" cy="${b}" rx="${c}" ry="${d}" fill="${fill}" fill-opacity="${o}"><title>${m}</title></ellipse>`; };
+  return `<svg viewBox="0 0 120 232" role="img" aria-label="${side} view"><circle cx="60" cy="22" r="12" fill="var(--line)"/><rect x="55" y="33" width="10" height="9" rx="3" fill="var(--line)"/>
+    <ellipse cx="18" cy="130" rx="4" ry="5" fill="var(--line)"/><ellipse cx="102" cy="130" rx="4" ry="5" fill="var(--line)"/><ellipse cx="48" cy="226" rx="7" ry="4" fill="var(--line)"/><ellipse cx="72" cy="226" rx="7" ry="4" fill="var(--line)"/>
+    ${BODY[side].map(shape).join("")}</svg>`;
+}
+function muscleMapCard(){
+  const sets=weekMuscles(), top=Object.entries(sets).sort((a,b)=>b[1]-a[1]), max=Math.max(6,...top.map(t=>t[1]));
+  return `<section class="card" id="musclemap"><div class="card-head"><h2>Trained this week</h2><span class="small muted">last 7 days</span></div>
+    <div class="bodymap">${bodySVG("front",sets,max)}${bodySVG("back",sets,max)}</div>
+    ${top.length?`<div class="row" style="gap:6px;margin-top:12px">${top.slice(0,8).map(([m,v])=>`<span class="pill" style="text-transform:capitalize">${esc(m)} · ${Math.round(v)} set${Math.round(v)===1?"":"s"}</span>`).join("")}</div>`
+      :`<div class="empty" style="margin-top:12px">Finish a gym session and the muscles you worked light up here.</div>`}</section>`;
+}
 function bestLiftsCard(){
   const seen=new Map();
   for (const w of gym().log.slice().reverse()) for (const x of w.ex) if (!seen.has(x.id)) seen.set(x.id, {n:x.n, best:bestSet(x.id), date:w.date});
@@ -1074,7 +1166,7 @@ function renderPsych(){
   <section class="card span" style="background:var(--blue-soft);border-color:transparent">
     <div class="label" style="color:var(--blue)">Discipline</div>
     <h2 style="font:900 28px/1 var(--f-display);text-transform:uppercase;letter-spacing:.02em;margin:8px 0 10px;color:var(--ink)">Rewire your psychology</h2>
-    <p class="small" style="color:var(--ink-2)">Discipline is trainable, like a muscle. ${c.lessons.length} lessons that move you from undisciplined to disciplined — one small win at a time.</p>
+    <p class="small" style="color:var(--ink-2)">Discipline is trainable, like a muscle. Start free with the 5-Day Kickoff, then go deeper with ${c.lessons.length} Premium lessons.</p>
   </section>`;
   const fc = COURSES.free, fdone = fc.lessons.filter((_,i)=>S.done["free"+i]).length;
   const freeCard = `
@@ -1156,6 +1248,7 @@ function renderProgress(){
     </div>
     <button class="btn ghost sm" style="margin-top:8px;color:var(--red)" data-reset>Erase all data</button>
   </section>
+  ${muscleMapCard()}
   ${bestLiftsCard()}`;
   bindChart(ws);
 }
@@ -1167,7 +1260,7 @@ function weightChart(ws){
   const x=t=>L+(t-t0)/span*(W-L-R), y=k=>T+(hi-k)/(hi-lo)*(H-T-B);
   const avg = ws.map((w,i)=>{const t=Date.parse(w.date); const win=ws.filter(v=>{const tv=Date.parse(v.date);return tv<=t&&tv>t-7*864e5}); return [t, win.reduce((s,v)=>s+v.kg,0)/win.length];});
   const step = (hi-lo)<=4?1:2; let grid="";
-  for(let k=lo;k<=hi;k+=step) grid+=`<line x1="${L}" x2="${W-R}" y1="${y(k)}" y2="${y(k)}" stroke="var(--line)" stroke-width="1"/><text x="${L-6}" y="${y(k)+4}" text-anchor="end" font-size="10" fill="var(--ink-3)" font-family="var(--f-data)">${k}</text>`;
+  for(let k=lo;k<=hi;k+=step) grid+=`<line x1="${L}" x2="${W-R}" y1="${y(k)}" y2="${y(k)}" stroke="var(--line)" stroke-width="1"/><text x="${L-6}" y="${y(k)+4}" text-anchor="end" font-size="13" fill="var(--ink-3)" font-family="var(--f-data)">${k}</text>`;
   const fmtD=t=>new Date(t).toLocaleDateString("en-GB",{day:"numeric",month:"short"});
   const line = avg.map(([t,k],i)=>`${i?"L":"M"}${x(t).toFixed(1)},${y(k).toFixed(1)}`).join("");
   const area = line+`L${x(avg[avg.length-1][0])},${H-B}L${x(avg[0][0])},${H-B}Z`;
@@ -1177,8 +1270,8 @@ function weightChart(ws){
     ${ws.map(w=>`<circle cx="${x(Date.parse(w.date))}" cy="${y(w.kg)}" r="3" fill="var(--ink-3)" opacity=".55"/>`).join("")}
     <path d="${line}" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
     <circle cx="${x(lastA[0])}" cy="${y(lastA[1])}" r="5" fill="var(--blue)" stroke="var(--surface)" stroke-width="2"/>
-    <text x="${L}" y="${H-6}" font-size="10" fill="var(--ink-3)" font-family="var(--f-data)">${fmtD(t0)}</text>
-    <text x="${W-R}" y="${H-6}" text-anchor="end" font-size="10" fill="var(--ink-3)" font-family="var(--f-data)">${fmtD(t1)}</text>
+    <text x="${L}" y="${H-6}" font-size="13" fill="var(--ink-3)" font-family="var(--f-data)">${fmtD(t0)}</text>
+    <text x="${W-R}" y="${H-6}" text-anchor="end" font-size="13" fill="var(--ink-3)" font-family="var(--f-data)">${fmtD(t1)}</text>
     <line id="cross" x1="0" x2="0" y1="${T}" y2="${H-B}" stroke="var(--ink-2)" stroke-width="1" stroke-dasharray="3 3" visibility="hidden"/>
     <rect id="hit" x="${L}" y="${T}" width="${W-L-R}" height="${H-T-B}" fill="transparent"/></svg>
     <div class="tip" id="tip" hidden></div>
@@ -1207,15 +1300,14 @@ function nextLesson(){ const order = S.premium ? ["train","free","mind"] : ["tra
 function renderHome(){
   cur=TODAY; seedSocial();
   const n=numbers(TODAY), p=n.p, d=n.d, eat=n.eat, prot=n.prot, over=n.remaining<0;
-  const frows=[{steps:d.steps,you:true}, ...S.social.friends.map(f=>({steps:f.today}))].sort((a,b)=>b.steps-a.steps);
-  const frank=frows.findIndex(r=>r.you)+1, fN=frows.length, streak=userStreak(), nl=nextLesson();
+  const cr=compRows("week"), frank=cr.idx+1, fN=cr.rows.length, streak=userStreak(), nl=nextLesson();
   const dt=new Date().toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long"});
   let status;
   if(!eat.kcal) status=`You haven't logged anything yet — <strong>${fmt(n.target)} kcal</strong> to work with today.`;
   else if(n.deficit>=n.goalDef) status=`You're <strong>${fmt(n.deficit)} kcal</strong> under your burn. Goal hit for today.`;
   else status=`<strong>${fmt(n.goalDef-Math.max(0,n.deficit))} kcal</strong> to go to your deficit goal.`;
   const bars=[
-    ["Deficit", `${n.deficit>=0?'−':'+'}${fmt(Math.abs(n.deficit))} / ${fmt(n.goalDef)}`, Math.max(0,Math.min(100,n.deficit/n.goalDef*100)), "var(--green)"],
+    [n.deficit>=0?"Deficit":"Surplus", `${fmt(Math.abs(n.deficit))} / ${fmt(n.goalDef)}${n.deficit>=n.goalDef?" ✓":""}`, Math.max(0,Math.min(100,n.deficit/n.goalDef*100)), "var(--green)"],
     ["Protein", `${r0(eat.protein)} / ${prot.min} g`, Math.min(100,eat.protein/prot.min*100), "var(--blue)"],
     ["Steps", `${fmt(d.steps)} / ${fmt(p.stepGoal)}`, Math.min(100,d.steps/p.stepGoal*100), "var(--yellow)"]
   ];
@@ -1225,7 +1317,7 @@ function renderHome(){
 
   <section class="card">
     <div class="hero">
-      <div class="ring">${ringSVG(eat.kcal/Math.max(1,n.target), over?'var(--red)':'var(--ink)')}
+      <div class="ring">${ringSVG(eat.kcal/Math.max(1,n.target), over?'var(--red)':'var(--accent)')}
         <div class="mid"><div class="label">${over?'Over':'Left'}</div><div class="big num" style="font-family:var(--f-display)">${fmt(Math.abs(n.remaining))}</div><div class="small muted">kcal</div></div></div>
       <div class="mini">${bars.map(([k,v,pct,c])=>`<div class="m"><span class="small" style="font-weight:600">${k}</span><span class="num small muted">${v}</span><div class="bar" style="grid-column:1/3"><i style="width:${pct}%;background:${c}"></i></div></div>`).join("")}</div>
     </div>
@@ -1236,7 +1328,7 @@ function renderHome(){
 
   <section class="card snap">
     <div class="ring" style="width:64px;height:64px;flex:none"><svg viewBox="0 0 132 132" style="transform:rotate(-90deg)" aria-hidden="true"><circle cx="66" cy="66" r="56" fill="none" stroke="var(--sunk)" stroke-width="14"/><circle cx="66" cy="66" r="56" fill="none" stroke="var(--yellow)" stroke-width="14" stroke-linecap="round" stroke-dasharray="${(2*Math.PI*56*stepFrac).toFixed(1)} 999"/></svg></div>
-    <div class="grow" style="min-width:0"><div class="label">Compete · this week</div><div class="big2 num">${ord(frank)} <span class="muted" style="font-size:15px;font-weight:400">of ${fN} friends</span></div><div class="small muted">🔥 ${streak}-day streak</div></div>
+    <div class="grow" style="min-width:0"><div class="label">Compete · this week</div><div class="big2 num">${ord(frank)} <span class="muted" style="font-size:15px;font-weight:400">of ${fN} ${cr.who}</span></div><div class="small muted">${streakTxt(streak)}</div></div>
     <button class="btn sm" data-tab="compete">Open</button>
   </section>
 
@@ -1246,7 +1338,7 @@ function renderHome(){
   <section class="card"><div class="label" style="margin-bottom:12px">Quick actions</div>
     <div class="qa">
       <button data-tab="food"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 11h16a8 8 0 0 1-16 0z"/><path d="M8 7c0-2 2-2 2-4M13 7c0-2 2-2 2-4"/></svg>Log food</button>
-      <button data-open="act"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8v8M18 8v8M3 10v4M21 10v4M7 12h10"/></svg>Add workout</button>
+      <button data-gym-start><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8v8M18 8v8M3 10v4M21 10v4M7 12h10"/></svg>Start workout</button>
       <button data-tab="checkin"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16v11H9l-5 4z"/></svg>Daily check-in</button>
       <button data-tab="progress"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 20h18M5 16l4-5 4 3 6-8"/></svg>Log weight</button>
     </div>
@@ -1321,9 +1413,18 @@ function lbRow(r,i,uidx){
   if(!r.you){ const label=i<uidx?"Cheer":"Nudge"; const done=S.social.acted.map[r.id];
     act=done?`<button class="cheerbtn done" disabled>${done}</button>`:`<button class="cheerbtn" data-cheer="${r.id}" data-label="${label}">${label}</button>`; }
   return `<div class="item ${r.you?"you":""}"><span class="rank ${medal}">${i+1}</span><span class="av" style="background:${col(r.c)}">${initials(r.name)}</span>
-    <div class="grow"><div class="name">${esc(r.name)}</div><div class="meta">${r.streak>0?`🔥 ${r.streak}-day streak`:"No streak yet"}</div></div>
+    <div class="grow"><div class="name">${esc(r.name)}</div><div class="meta">${streakTxt(r.streak)}</div></div>
     <span class="num" style="font-weight:600">${fmt(r.steps)}</span>${act}</div>`;
 }
+function compRows(period){
+  seedSocial();
+  const you={id:"you", name:"You", today:day(TODAY).steps, week:userWeekSteps(), streak:userStreak(), c:"--ink", you:true};
+  const liveOn = !!(S.social.live && live.rows);
+  const others = liveOn ? live.rows.filter(r=>r.id!==S.social.live.me) : S.social.friends;
+  const rows=[you, ...others].map(f=>({...f, steps: period==="today"?f.today:f.week})).sort((a,b)=>b.steps-a.steps);
+  return {rows, idx: rows.findIndex(r=>r.you), liveOn, who: liveOn?"players":"friends"};
+}
+const streakTxt = n => n>0 ? `🔥 ${n}-day streak` : "No streak yet";
 function renderCompete(){
   seedSocial();
   const you={id:"you", name:"You", today:day(TODAY).steps, week:userWeekSteps(), streak:userStreak(), c:"--ink", you:true};
@@ -1404,11 +1505,12 @@ function readProfile(){
   const deficit = +document.querySelector("[data-def][aria-pressed=true]").dataset.def;
   const age=+$("#pa").value, height=parseHeight($("#ph").value), weight=+$("#pw").value, stepGoal=+$("#ps").value||8000;
   const err = $("#perr");
-  const fail = m => { err.textContent=m; err.hidden=false; return null; };
-  if (!age||!$("#ph").value.trim()||!weight) return fail("Fill in age, height and weight.");
-  if (age<18) return fail("This app is for adults 18 and over. Calorie deficits aren't recommended for teenagers without a doctor's guidance.");
-  if (height<120||height>230) return fail(`Couldn't read that height. Enter it in cm (175) or feet and inches (5'9).`);
-  if (weight<35||weight>300) return fail(`Weight must be in kilograms, between 35 and 300. You entered ${weight}. To convert from pounds, divide by 2.2.`);
+  ["#pa","#ph","#pw"].forEach(id=>$(id).removeAttribute("aria-invalid"));
+  const fail = (m, ids=[]) => { err.textContent=m; err.hidden=false; ids.forEach(id=>$(id).setAttribute("aria-invalid","true")); if(ids[0]) $(ids[0]).focus(); return null; };
+  if (!age||!$("#ph").value.trim()||!weight) return fail("Fill in age, height and weight.", [!age&&"#pa", !$("#ph").value.trim()&&"#ph", !weight&&"#pw"].filter(Boolean));
+  if (age<18) return fail("This app is for adults 18 and over. Calorie deficits aren't recommended for teenagers without a doctor's guidance.", ["#pa"]);
+  if (height<120||height>230) return fail(`Couldn't read that height. Enter it in cm (175) or feet and inches (5'9).`, ["#ph"]);
+  if (weight<35||weight>300) return fail(`Weight must be in kilograms, between 35 and 300. You entered ${weight}. To convert from pounds, divide by 2.2.`, ["#pw"]);
   return {sex, age, height, weight, deficit, stepGoal};
 }
 function renderOnboarding(){
@@ -1513,6 +1615,14 @@ document.addEventListener("click", e => {
   if (ds.ex){ openExercise(ds.ex); return; }
   if (ds.gymStart !== undefined || ds.gymResume !== undefined){ $("#layer").innerHTML=""; gymStart(); return; }
   if (ds.gymPickOpen !== undefined){ openGymPicker(); return; }
+  if (ds.quick !== undefined){ openQuick(); return; }
+  if (ds.gjump){ const c=$("#gx"+ds.gjump); if(c) c.scrollIntoView({behavior:"smooth", block:"start"}); return; }
+  if (ds.qa){ $("#layer").innerHTML=""; window.scrollTo(0,0);
+    if (ds.qa==="food"){ tab="food"; cur=TODAY; render(); }
+    if (ds.qa==="weight"){ tab="progress"; render(); const w=$("#wkg"); if(w){ w.scrollIntoView({block:"center"}); w.focus(); } }
+    if (ds.qa==="lib"){ tab="learn"; render(); const l=$("#exlib"); if(l) l.scrollIntoView({block:"start"}); }
+    return; }
+  if (ds.gpgroup !== undefined){ gpGroup=ds.gpgroup; document.querySelectorAll("[data-gpgroup]").forEach(b=>b.setAttribute("aria-pressed", b.dataset.gpgroup===gpGroup)); gpRender(); return; }
   if (ds.gymPick){ gymPick(ds.gymPick); return; }
   if (ds.gymDone){ const [i,j]=ds.gymDone.split(":").map(Number); gymSetDone(i,j); return; }
   if (ds.gymAddset){ const x=gym().active.ex[+ds.gymAddset], l=x.sets[x.sets.length-1]; x.sets.push({kg:l?l.kg:null, reps:l?l.reps:null, done:false}); save(); renderGym(); return; }
