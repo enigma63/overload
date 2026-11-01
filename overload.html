@@ -220,6 +220,7 @@ textarea{resize:vertical;min-height:70px}
 
 <div id="layer"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/convex@1.48.0/dist/browser.bundle.js"></script>
 <script>
 /*MATH-START*/
 const KCAL_PER_KG = 7700;          // energy in ~1 kg of body fat
@@ -457,7 +458,7 @@ if (!S.favMin || typeof S.favMin !== "object") S.favMin = {};
 if (typeof S.premium !== "boolean") S.premium = false;
 const QUICK_MIN = 30;
 function load(){ try{ return JSON.parse(localStorage.getItem(STORE)); }catch(e){ return null; } }
-function save(){ try{ localStorage.setItem(STORE, JSON.stringify(S)); }catch(e){} }
+function save(){ try{ localStorage.setItem(STORE, JSON.stringify(S)); }catch(e){} liveSync(); }
 const key = d => { const z=n=>String(n).padStart(2,"0"); return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}`; };
 const TODAY = key(new Date());
 let cur = TODAY, tab = "home", foodMode = "search", learnTab = "train", compPeriod = "week", homeBurnTab = "bmr";
@@ -469,6 +470,7 @@ const $ = s => document.querySelector(s);
 
 let sample = null, imgOK = false;
 (async () => {
+  await 0; // let the rest of the script load before the first render
   try{
     sample = window.claude ? await window.claude.use("sample") : null;
     if (sample){ const L = await sample.limits().catch(()=>null); imgOK = !!(L && L.images); }
@@ -1008,6 +1010,39 @@ function badges(){
     {name:"Progression", ic:"🏋️", got: (S.lifts||[]).length>0}
   ];
 }
+/* ---------- live leaderboard (Convex) ---------- */
+// Players who join share their name, streak and the last 7 days of steps; everything else stays on this device.
+const CONVEX_URL = "https://moonlit-whale-265.convex.cloud";
+var live = {client:null, rows:null, unsub:null, week:""}, liveTimer = null; // var: save() can run before this line
+function weekDates(){ const out=[]; const d=new Date(TODAY+"T12:00"); for(let i=0;i<7;i++){ out.push(key(d)); d.setDate(d.getDate()-1); } return out; }
+function newPlayerId(){ return (crypto.randomUUID ? crypto.randomUUID() : Array.from(crypto.getRandomValues(new Uint8Array(16)), b=>b.toString(16).padStart(2,"0")).join("")); }
+function liveStart(){
+  if (live.client || !window.convex || !S.social || !S.social.live) return;
+  try { live.client = new convex.ConvexClient(CONVEX_URL); } catch(e){ console.warn("Live leaderboard unavailable", e); return; }
+  const dates = weekDates(); live.week = dates[0];
+  live.unsub = live.client.onUpdate(convex.anyApi.leaderboard.board, {today:TODAY, dates}, rows => { live.rows = rows; if (tab==="compete") renderCompete(); }, err => console.warn("Live leaderboard error", err));
+  liveSync();
+}
+function liveStop(){ if (live.unsub) live.unsub(); if (live.client) live.client.close(); live = {client:null, rows:null, unsub:null, week:""}; }
+function liveSync(){
+  if (!live || !live.client || !S.social || !S.social.live) return;
+  clearTimeout(liveTimer);
+  liveTimer = setTimeout(async () => {
+    const L = S.social.live;
+    try {
+      const me = await live.client.mutation(convex.anyApi.leaderboard.sync, {playerId:L.id, name:L.name, streak:userStreak(), days: weekDates().map(d=>({date:d, steps:(S.days[d]&&S.days[d].steps)||0}))});
+      if (L.me !== me){ L.me = me; try{ localStorage.setItem(STORE, JSON.stringify(S)); }catch(e){} if (tab==="compete") renderCompete(); }
+    } catch(e){ console.warn("Leaderboard sync failed", e); }
+  }, 600);
+}
+function liveCard(){
+  if (S.social.live) return `<p class="small muted" style="margin-top:10px">Live board · ${live.rows?live.rows.length:"…"} player${live.rows&&live.rows.length===1?"":"s"}, updating as people log steps. Playing as <strong>${esc(S.social.live.name)}</strong>. Cheers and nudges stay on this device for now. <button class="btn ghost sm" data-live-leave style="padding:0;color:var(--red)">Leave</button></p>`;
+  return `<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line)">
+    <p class="small" style="margin-bottom:8px"><strong>Compete for real.</strong> Join the live board to race other Enigma users. Only your name, streak and the last 7 days of steps are shared.</p>
+    <div class="row" style="gap:8px"><input id="lbname" maxlength="24" placeholder="Name to show, e.g. Kola A." style="flex:1;min-width:0"><button class="btn sm primary" data-live-join>Join</button></div>
+    <p class="small muted" style="margin-top:8px">Sample friends below until you join.</p></div>`;
+}
+
 function lbRow(r,i,uidx){
   const medal=i<3?["m1","m2","m3"][i]:"";
   let act="";
@@ -1020,7 +1055,11 @@ function lbRow(r,i,uidx){
 function renderCompete(){
   seedSocial();
   const you={id:"you", name:"You", today:day(TODAY).steps, week:userWeekSteps(), streak:userStreak(), c:"--ink", you:true};
-  const rows=[you, ...S.social.friends].map(f=>({...f, steps: compPeriod==="today"?f.today:f.week})).sort((a,b)=>b.steps-a.steps);
+  if (S.social.live && live.week && live.week!==TODAY){ liveStop(); liveStart(); }
+  const liveOn = !!(S.social.live && live.rows);
+  const others = liveOn ? live.rows.filter(r=>r.id!==S.social.live.me) : S.social.friends;
+  if (liveOn) you.name = "You";
+  const rows=[you, ...others].map(f=>({...f, steps: compPeriod==="today"?f.today:f.week})).sort((a,b)=>b.steps-a.steps);
   const idx=rows.findIndex(r=>r.you), N=rows.length, ahead=idx>0?rows[idx-1]:null;
   const pw=compPeriod==="today"?"today":"this week";
   const gap=ahead?`${fmt(ahead.steps-rows[idx].steps)} steps behind ${esc(ahead.name)} ${pw}.`:`You're out in front ${pw} — hold the lead.`;
@@ -1030,14 +1069,15 @@ function renderCompete(){
   $("#view").innerHTML=`
   <section class="card">
     <div class="label">Your rank · ${pw}</div>
-    <div class="hero-rank" style="margin:4px 0 8px"><span class="num" style="font-family:var(--f-display);font-weight:900;font-size:52px">${ord(idx+1)}</span><span class="muted">of ${N} friends</span></div>
+    <div class="hero-rank" style="margin:4px 0 8px"><span class="num" style="font-family:var(--f-display);font-weight:900;font-size:52px">${ord(idx+1)}</span><span class="muted">of ${N} ${liveOn?"players":"friends"}</span></div>
     <p class="small">${gap}</p>
   </section>
   <section class="card">
     <div class="card-head"><h2>Leaderboard</h2><span class="pill">Resets Mon · ${toMon}d</span></div>
     <div class="seg" role="group" aria-label="Period" style="margin-bottom:12px"><button data-period="today" aria-pressed="${compPeriod==="today"}">Today</button><button data-period="week" aria-pressed="${compPeriod==="week"}">This week</button></div>
     <div class="list lb">${rows.map((r,i)=>lbRow(r,i,idx)).join("")}</div>
-    <p class="small muted" style="margin-top:10px">Sample friends for the prototype. Cheer whoever's ahead of you, nudge whoever's behind.</p>
+    ${liveOn||S.social.live ? "" : `<p class="small muted" style="margin-top:10px">Cheer whoever's ahead of you, nudge whoever's behind.</p>`}
+    ${liveCard()}
   </section>
   <section class="card">
     <div class="card-head"><h2>Weekly reset</h2></div>
@@ -1216,7 +1256,9 @@ document.addEventListener("click", e => {
   if (ds.unlockPremium !== undefined){ S.premium=true; save(); render(); toast("Enigma Premium unlocked"); return; }
   if (ds.lockPremium !== undefined){ S.premium=false; save(); render(); toast("Premium locked (demo)"); return; }
   if (ds.period){ compPeriod=ds.period; renderCompete(); return; }
-  if (ds.cheer){ const f=S.social.friends.find(x=>x.id===ds.cheer); const lbl=ds.label==="Cheer"?"Cheered":"Nudged"; S.social.acted.map[ds.cheer]=lbl; save(); renderCompete(); toast(`${lbl} ${f.name}`); return; }
+  if (ds.liveJoin !== undefined){ const n=($("#lbname").value||"").trim().replace(/\s+/g," "); if(!n){ toast("Add a name to show on the board"); return; } if(!window.convex){ toast("Can't reach the live board right now"); return; } S.social.live={id:newPlayerId(), name:n.slice(0,24)}; save(); liveStart(); renderCompete(); toast("You're on the live board"); return; }
+  if (ds.liveLeave !== undefined){ const id=S.social.live.id; const c=live.client; if(c) c.mutation(convex.anyApi.leaderboard.leave,{playerId:id}).catch(()=>{}).finally(()=>c.close()); if(live.unsub) live.unsub(); live={client:null, rows:null, unsub:null, week:""}; delete S.social.live; save(); renderCompete(); toast("Left the live board"); return; }
+  if (ds.cheer){ const f=S.social.friends.find(x=>x.id===ds.cheer) || (live.rows||[]).find(x=>x.id===ds.cheer); const lbl=ds.label==="Cheer"?"Cheered":"Nudged"; S.social.acted.map[ds.cheer]=lbl; save(); renderCompete(); toast(`${lbl} ${f.name}`); return; }
   if (ds.lesson){ openLesson(+ds.lesson); return; }
   if (ds.homeCk){ if(ds.homeCk==="mind" && !S.premium){ tab="psych"; render(); return; } learnTab=ds.homeCk; openLesson(+ds.homeI); return; }
   if (ds.complete){ const k=learnTab+ds.complete; S.done[k]=!S.done[k]; save(); $("#layer").innerHTML=""; render(); return; }
@@ -1239,9 +1281,11 @@ document.addEventListener("change", e => {
 });
 document.addEventListener("keydown", e => {
   if (e.target.id==="cin" && e.key==="Enter" && !e.shiftKey){ e.preventDefault(); sendChat(); }
+  if (e.target.id==="lbname" && e.key==="Enter"){ e.preventDefault(); $("[data-live-join]").click(); }
   if (e.key==="Escape" && $("#layer .scrim")) $("#layer").innerHTML="";
 });
 render();
+if (S.profile){ seedSocial(); liveStart(); }
 </script>
 
 </body></html>

@@ -1,0 +1,12 @@
+{
+  "name": "enigma",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Enigma fitness app. The page is static HTML; this package only holds the Convex backend.",
+  "scripts": {
+    "convex": "convex dev"
+  },
+  "dependencies": {
+    "convex": "^1.48.0"
+  }
+}
