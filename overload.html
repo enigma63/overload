@@ -140,6 +140,11 @@ textarea{resize:vertical;min-height:70px}
 .lesson.done .n{background:var(--green);color:#fff}
 .lesson .grow{flex:1;min-width:0}
 .duo{display:flex;flex-direction:column;gap:14px}
+.exrow{width:100%;text-align:left;background:none;border:0;border-top:1px solid var(--line);color:inherit}
+.exrow .name,.exrow .meta{display:block}
+.exrow .meta{text-transform:capitalize}
+.exthumb{width:52px;height:52px;border-radius:8px;object-fit:cover;background:var(--sunk);flex:none}
+.exsteps{display:flex;flex-direction:column;gap:10px;margin:0;padding-left:20px;color:var(--ink-2)}
 .ladder{display:flex;flex-direction:column;gap:6px}
 .rung{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:9px;font-size:14px}
 .rung.past{color:var(--ink-3);text-decoration:line-through;text-decoration-color:var(--line)}
@@ -209,6 +214,9 @@ textarea{resize:vertical;min-height:70px}
   main>:not(.card):not(section),main>.span{column-span:all}
   main>.chat,main>.composer{max-width:820px}
   .duo{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;align-items:start}
+  #exlist{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:28px}
+  #exlist>.exrow:nth-child(2){border-top:0}
+  #exlist>:not(.exrow){grid-column:1/-1}
   .nav{top:63px;right:auto;width:var(--side);justify-content:stretch;border-right:1px solid var(--line);background:var(--surface)}
   .nav-in{max-width:none;border-top:0;display:flex;flex-direction:column;gap:2px;padding:16px 12px;background:none}
   .nav button{flex-direction:row;justify-content:flex-start;gap:12px;padding:11px 14px;font-size:14.5px;color:var(--ink-2)}
@@ -834,7 +842,63 @@ function renderLearn(){
     <div class="bar"><i style="width:${done/c.lessons.length*100}%;background:var(--green)"></i></div>
     <div style="margin-top:8px">${c.lessons.map((l,i)=>`<button class="lesson ${S.done[learnTab+i]?"done":""}" data-lesson="${i}"><span class="n">${S.done[learnTab+i]?"✓":i+1}</span><span class="grow" style="font-weight:600">${esc(l.t)}</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--ink-3)"><path d="M9 6l6 6-6 6"/></svg></button>`).join("")}</div>
   </section>
-  ${learnTab==="train"?ladders()+planner():""}`;
+  ${learnTab==="train"?ladders()+planner():""}
+  ${exLibrary()}`;
+  exLoad();
+}
+
+/* ---------- exercise library (free-exercise-db, public domain) ---------- */
+const EX_IMG = "https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5/exercises/";
+const EX_GROUPS = {chest:["chest"], back:["lats","middle back","lower back","traps"], shoulders:["shoulders","neck"], arms:["biceps","triceps","forearms"], legs:["quadriceps","hamstrings","calves","adductors","abductors"], glutes:["glutes"], abs:["abdominals"]};
+const EX_EQUIP = ["body only","dumbbell","barbell","kettlebells","bands","cable","machine"];
+const EX_LEVEL = {b:"Beginner", i:"Intermediate", e:"Expert"};
+const exCap = s => s.charAt(0).toUpperCase() + s.slice(1);
+let EX = null, exQ = "", exGroup = "", exEquip = "", exShown = 30, exLoading = null;
+function exLoad(){
+  if (EX){ exRenderList(); return; }
+  if (exLoading) return;
+  exLoading = fetch("exercises.json").then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then(d => { EX = d; exRenderList(); })
+    .catch(() => { exLoading = null; const el = $("#exlist"); if (el) el.innerHTML = `<div class="empty">Couldn't load the exercise library. Check your connection and open Learn again.</div>`; });
+}
+function exLibrary(){
+  return `<section class="card span" id="exlib">
+    <div class="card-head"><h2>Exercise library</h2><span class="small muted num" id="excount"></span></div>
+    <div class="row" style="flex-wrap:nowrap;gap:8px">
+      <input type="search" id="exq" placeholder="Search, e.g. squat or push-up" value="${esc(exQ)}" autocomplete="off" aria-label="Search exercises">
+      <select id="exeq" aria-label="Equipment" style="width:auto;flex:none">${["",...EX_EQUIP,"other"].map(q=>`<option value="${q}" ${exEquip===q?"selected":""}>${q?exCap(q):"Any equipment"}</option>`).join("")}</select>
+    </div>
+    <div class="row" style="margin-top:10px;gap:6px">${["",...Object.keys(EX_GROUPS)].map(g=>`<button class="chipbtn" data-exgroup="${g}" aria-pressed="${exGroup===g}">${g?exCap(g):"All muscles"}</button>`).join("")}</div>
+    <div id="exlist" class="list" style="margin-top:8px"><div class="empty">Loading exercises…</div></div>
+    <p class="small muted" style="margin-top:10px">Exercises and photos from the free-exercise-db project (public domain).</p>
+  </section>`;
+}
+function exMatches(){
+  const words = exQ.toLowerCase().split(/\s+/).filter(Boolean), g = EX_GROUPS[exGroup];
+  return EX.filter(x => words.every(w => x.n.toLowerCase().includes(w))
+    && (!g || x.p.some(m => g.includes(m)))
+    && (!exEquip || (exEquip === "other" ? !EX_EQUIP.includes(x.e) : x.e === exEquip)));
+}
+function exRenderList(){
+  const el = $("#exlist"); if (!el || !EX) return;
+  const list = exMatches();
+  $("#excount").textContent = `${fmt(list.length)} exercises`;
+  el.innerHTML = list.length ? list.slice(0, exShown).map(x => `<button class="item exrow" data-ex="${esc(x.id)}">
+      ${x.k ? `<img class="exthumb" src="${EX_IMG}${encodeURIComponent(x.id)}/0.jpg" alt="" loading="lazy">` : `<span class="exthumb"></span>`}
+      <span class="grow"><span class="name">${esc(x.n)}</span><span class="meta">${esc(x.p.join(", "))} · ${esc(x.e)}</span></span>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--ink-3);flex:none"><path d="M9 6l6 6-6 6"/></svg></button>`).join("")
+    + (list.length > exShown ? `<button class="btn block" data-exmore style="margin-top:10px">Show more (${fmt(list.length-exShown)} left)</button>` : "")
+    : `<div class="empty">No exercises match. Try another word or filter.</div>`;
+}
+function openExercise(id){
+  const x = EX && EX.find(e => e.id === id); if (!x) return;
+  $("#layer").innerHTML = `<div class="scrim" data-close><div class="sheet" role="dialog" aria-modal="true" aria-label="${esc(x.n)}">
+    <div class="row between"><span class="label">${esc(exCap(x.c))} · ${EX_LEVEL[x.l]||""}</span><button class="x" data-close aria-label="Close">✕</button></div>
+    <h3>${esc(x.n)}</h3>
+    ${x.k ? `<div class="grid2">${Array.from({length:x.k}, (_,i) => `<img class="preview" style="max-height:none;aspect-ratio:4/3" src="${EX_IMG}${encodeURIComponent(x.id)}/${i}.jpg" alt="${esc(x.n)}, ${i?"end":"start"} position">`).join("")}</div>` : ""}
+    <div class="row" style="gap:6px">${x.p.map(m=>`<span class="pill red">${esc(m)}</span>`).join("")}${x.s.map(m=>`<span class="pill">${esc(m)}</span>`).join("")}<span class="pill blue">${esc(x.e)}</span></div>
+    <ol class="exsteps">${x.i.map(t=>`<li>${esc(t)}</li>`).join("")}</ol>
+  </div></div>`;
 }
 function ladders(){
   return `<section class="card"><div class="card-head"><h2>Calisthenics ladders</h2></div>
@@ -1298,6 +1362,9 @@ document.addEventListener("click", e => {
   const t = e.target.closest("button,[data-close]"); if (!t) return;
   const ds = t.dataset;
   if (ds.close !== undefined && (e.target === t || t.tagName==="BUTTON")) { $("#layer").innerHTML=""; return; }
+  if (ds.ex){ openExercise(ds.ex); return; }
+  if (ds.exgroup !== undefined){ exGroup = ds.exgroup; exShown = 30; document.querySelectorAll("[data-exgroup]").forEach(b => b.setAttribute("aria-pressed", b.dataset.exgroup === exGroup)); exRenderList(); return; }
+  if (ds.exmore !== undefined){ exShown += 30; exRenderList(); return; }
   if (t.closest(".sheet") && t.classList.contains("scrim")) return;
   if (ds.tab){ tab = ds.tab; if (tab!=="checkin") pending=[]; window.scrollTo(0,0); render(); return; }
   if (t.id==="prevDay"){ const d=new Date(cur+"T12:00"); d.setDate(d.getDate()-1); cur=key(d); pending=[]; photoEst=descEst=null; render(); return; }
@@ -1350,9 +1417,11 @@ document.addEventListener("click", e => {
 });
 document.addEventListener("input", e => {
   if (e.target.id==="fq") filterFoods(e.target.value);
+  if (e.target.id==="exq"){ exQ = e.target.value; exShown = 30; exRenderList(); }
   if (e.target.dataset.mult !== undefined){ const est=photoEst||descEst; est.items[+e.target.dataset.mult].mult=+e.target.value; const keep=lastDesc; renderFood(); if($("#dq")) $("#dq").value=keep; }
 });
 document.addEventListener("change", e => {
+  if (e.target.id==="exeq"){ exEquip = e.target.value; exShown = 30; exRenderList(); }
   if (e.target.id==="pf" && e.target.files[0]){ const f=e.target.files[0]; if(photo) URL.revokeObjectURL(photo.url); photo={file:f, url:URL.createObjectURL(f)}; photoEst=null; aiMsg=""; renderFood(); }
   if (e.target.dataset.xedit){ const a=day(TODAY).activities.find(x=>x.id===e.target.dataset.xedit); if(a){ const mins=Math.max(1,r0(+e.target.value||0)); a.minutes=mins; a.kcal=r0(activityKcal(S.profile, actMet(a), mins)); save(); renderHome(); } }
 });
