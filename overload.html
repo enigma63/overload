@@ -141,6 +141,12 @@ textarea{resize:vertical;min-height:70px}
 .lesson .grow{flex:1;min-width:0}
 .duo{display:flex;flex-direction:column;gap:14px}
 .exrow{width:100%;text-align:left;background:none;border:0;border-top:1px solid var(--line);color:inherit}
+.exwrap{display:flex;align-items:center;gap:2px;border-top:1px solid var(--line)}
+.exwrap:first-child,.label+.exwrap{border-top:0}
+.exwrap .exrow{border-top:0;flex:1;min-width:0}
+.star{width:44px;height:44px;flex:none;border:0;background:none;border-radius:50%;color:var(--ink-3);font-size:22px;line-height:1}
+.star:hover{background:var(--sunk)}
+.star[aria-pressed="true"]{color:var(--accent-ink)}
 .exrow .name,.exrow .meta{display:block}
 .exrow .meta{text-transform:capitalize}
 .exthumb{width:52px;height:52px;border-radius:8px;object-fit:cover;background:var(--sunk);flex:none}
@@ -266,8 +272,8 @@ main{padding-bottom:168px}
   main>.chat,main>.composer{max-width:820px}
   .duo{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;align-items:start}
   #exlist{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:28px}
-  #exlist>.exrow:nth-child(2){border-top:0}
-  #exlist>:not(.exrow){grid-column:1/-1}
+  #exlist>.exwrap:nth-child(2){border-top:0}
+  #exlist>:not(.exwrap){grid-column:1/-1}
   .nav{bottom:26px}
   .nav-in{width:auto;max-width:none;display:flex;gap:4px;padding:8px;border-radius:999px}
   .nav button{flex-direction:row;gap:8px;padding:11px 13px;border-radius:999px;font-size:0;position:relative;transition:background .2s, padding .2s, color .2s}
@@ -930,6 +936,19 @@ const EX_EQUIP = ["body only","dumbbell","barbell","kettlebells","bands","cable"
 const EX_LEVEL = {b:"Beginner", i:"Intermediate", e:"Expert"};
 const exCap = s => s.charAt(0).toUpperCase() + s.slice(1);
 let EX = null, exQ = "", exGroup = "", exEquip = "", exShown = 30, exLoading = null;
+const FAV_MAX = 20;
+const favEx = () => S.favEx || (S.favEx = []);
+const isFav = id => favEx().includes(id);
+const favFirst = list => [...list.filter(x=>isFav(x.id)), ...list.filter(x=>!isFav(x.id))];
+const favStar = x => `<button class="star" data-exfav="${esc(x.id)}" aria-pressed="${isFav(x.id)}" aria-label="${isFav(x.id)?"Remove":"Add"} ${esc(x.n)} ${isFav(x.id)?"from":"to"} favourites">${isFav(x.id)?"★":"☆"}</button>`;
+function toggleFav(id){
+  const f=favEx(), i=f.indexOf(id);
+  if (i>=0) f.splice(i,1);
+  else if (f.length>=FAV_MAX){ toast(`You can have up to ${FAV_MAX} favourites`); return; }
+  else f.push(id);
+  save(); exRenderList(); gpRender();
+  const sb=document.querySelector(".sheet [data-exfav-sheet]"); if (sb){ sb.setAttribute("aria-pressed", isFav(id)); sb.textContent = isFav(id)?"★ Favourite":"☆ Add to favourites"; }
+}
 function exLoad(){
   if (EX){ exRenderList(); return; }
   if (exLoading) return;
@@ -944,27 +963,27 @@ function exLibrary(){
       <input type="search" id="exq" placeholder="Search, e.g. squat or push-up" value="${esc(exQ)}" autocomplete="off" aria-label="Search exercises">
       <select id="exeq" aria-label="Equipment" style="width:auto;flex:none">${["",...EX_EQUIP,"other"].map(q=>`<option value="${q}" ${exEquip===q?"selected":""}>${q?exCap(q):"Any equipment"}</option>`).join("")}</select>
     </div>
-    <div class="row" style="margin-top:10px;gap:6px">${["",...Object.keys(EX_GROUPS)].map(g=>`<button class="chipbtn" data-exgroup="${g}" aria-pressed="${exGroup===g}">${g?exCap(g):"All muscles"}</button>`).join("")}</div>
+    <div class="row" style="margin-top:10px;gap:6px">${["","fav",...Object.keys(EX_GROUPS)].map(g=>`<button class="chipbtn" data-exgroup="${g}" aria-pressed="${exGroup===g}">${g==="fav"?"★ Favourites":g?exCap(g):"All muscles"}</button>`).join("")}</div>
     <div id="exlist" class="list" style="margin-top:8px"><div class="empty">Loading exercises…</div></div>
     <p class="small muted" style="margin-top:10px">Exercises and photos from the free-exercise-db project (public domain).</p>
   </section>`;
 }
 function exMatches(){
   const words = exQ.toLowerCase().split(/\s+/).filter(Boolean), g = EX_GROUPS[exGroup];
-  return EX.filter(x => words.every(w => x.n.toLowerCase().includes(w))
+  return favFirst(EX.filter(x => words.every(w => x.n.toLowerCase().includes(w))
+    && (exGroup!=="fav" || isFav(x.id))
     && (!g || x.p.some(m => g.includes(m)))
-    && (!exEquip || (exEquip === "other" ? !EX_EQUIP.includes(x.e) : x.e === exEquip)));
+    && (!exEquip || (exEquip === "other" ? !EX_EQUIP.includes(x.e) : x.e === exEquip))));
 }
 function exRenderList(){
   const el = $("#exlist"); if (!el || !EX) return;
   const list = exMatches();
   $("#excount").textContent = `${fmt(list.length)} exercises`;
-  el.innerHTML = list.length ? list.slice(0, exShown).map(x => `<button class="item exrow" data-ex="${esc(x.id)}">
+  el.innerHTML = list.length ? list.slice(0, exShown).map(x => `<div class="exwrap"><button class="item exrow" data-ex="${esc(x.id)}">
       ${x.k ? `<img class="exthumb" src="${EX_IMG}${encodeURIComponent(x.id)}/0.jpg" alt="" loading="lazy">` : `<span class="exthumb"></span>`}
-      <span class="grow"><span class="name">${esc(x.n)}</span><span class="meta">${esc(x.p.join(", "))} · ${esc(x.e)}</span></span>
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--ink-3);flex:none"><path d="M9 6l6 6-6 6"/></svg></button>`).join("")
+      <span class="grow"><span class="name">${esc(x.n)}</span><span class="meta">${esc(x.p.join(", "))} · ${esc(x.e)}</span></span></button>${favStar(x)}</div>`).join("")
     + (list.length > exShown ? `<button class="btn block" data-exmore style="margin-top:10px">Show more (${fmt(list.length-exShown)} left)</button>` : "")
-    : `<div class="empty">No exercises match. Try another word or filter.</div>`;
+    : `<div class="empty">${exGroup==="fav"&&!favEx().length?"No favourites yet. Tap the ☆ next to any exercise to pin it here and at the top of your workout picker.":"No exercises match. Try another word or filter."}</div>`;
 }
 function openExercise(id){
   const x = EX && EX.find(e => e.id === id); if (!x) return;
@@ -974,6 +993,7 @@ function openExercise(id){
     ${x.k ? `<div class="grid2">${Array.from({length:x.k}, (_,i) => `<img class="preview" style="max-height:none;aspect-ratio:4/3" src="${EX_IMG}${encodeURIComponent(x.id)}/${i}.jpg" alt="${esc(x.n)}, ${i?"end":"start"} position">`).join("")}</div>` : ""}
     <div class="row" style="gap:6px">${x.p.map(m=>`<span class="pill red">${esc(m)}</span>`).join("")}${x.s.map(m=>`<span class="pill">${esc(m)}</span>`).join("")}<span class="pill blue">${esc(x.e)}</span></div>
     <ol class="exsteps">${x.i.map(t=>`<li>${esc(t)}</li>`).join("")}</ol>
+    <button class="btn block" data-exfav="${esc(x.id)}" data-exfav-sheet aria-pressed="${isFav(x.id)}">${isFav(x.id)?"★ Favourite":"☆ Add to favourites"}</button>
   </div></div>`;
 }
 /* ---------- gym session logger ---------- */
@@ -1095,15 +1115,17 @@ function gpRender(){
   const words=gpQ.toLowerCase().split(/\s+/).filter(Boolean), g=EX_GROUPS[gpGroup];
   const inGroup=x=>!g || x.p.some(m=>g.includes(m));
   const recentIds=[...new Set(gym().log.slice().reverse().flatMap(w=>w.ex.map(x=>x.id)))].slice(0,8);
-  const recent=words.length?[]:recentIds.map(id=>EX.find(e=>e.id===id)).filter(x=>x&&inGroup(x));
-  const popular=words.length?[]:GYM_POPULAR.map(id=>EX.find(e=>e.id===id)).filter(x=>x&&inGroup(x)&&!recent.includes(x));
-  const list=EX.filter(x=>words.every(w=>x.n.toLowerCase().includes(w)) && inGroup(x) && !recent.includes(x) && !popular.includes(x)).slice(0,40);
-  const row=x=>`<button class="item exrow" data-gym-pick="${esc(x.id)}">${x.k?`<img class="exthumb" src="${EX_IMG}${encodeURIComponent(x.id)}/0.jpg" alt="" loading="lazy">`:`<span class="exthumb"></span>`}<span class="grow"><span class="name">${esc(x.n)}</span><span class="meta">${esc(x.p.join(", "))} · ${esc(x.e)}</span></span><span class="pill">Add</span></button>`;
+  const favs=words.length?[]:favEx().map(id=>EX.find(e=>e.id===id)).filter(x=>x&&inGroup(x));
+  const recent=words.length?[]:recentIds.map(id=>EX.find(e=>e.id===id)).filter(x=>x&&inGroup(x)&&!favs.includes(x));
+  const popular=words.length?[]:GYM_POPULAR.map(id=>EX.find(e=>e.id===id)).filter(x=>x&&inGroup(x)&&!recent.includes(x)&&!favs.includes(x));
+  const list=favFirst(EX.filter(x=>words.every(w=>x.n.toLowerCase().includes(w)) && inGroup(x) && !favs.includes(x) && !recent.includes(x) && !popular.includes(x))).slice(0,40);
+  const row=x=>`<div class="exwrap"><button class="item exrow" data-gym-pick="${esc(x.id)}">${x.k?`<img class="exthumb" src="${EX_IMG}${encodeURIComponent(x.id)}/0.jpg" alt="" loading="lazy">`:`<span class="exthumb"></span>`}<span class="grow"><span class="name">${esc(x.n)}</span><span class="meta">${esc(x.p.join(", "))} · ${esc(x.e)}</span></span><span class="pill">Add</span></button>${favStar(x)}</div>`;
   const head=t=>`<div class="label" style="margin:14px 0 2px">${t}</div>`;
-  el.innerHTML = (recent.length?head("Recent")+recent.map(row).join(""):"")
+  el.innerHTML = (favs.length?head("★ Favourites")+favs.map(row).join(""):"")
+    + (recent.length?head("Recent")+recent.map(row).join(""):"")
     + (popular.length?head("Popular")+popular.map(row).join(""):"")
     + (words.length?"":head("All exercises"))
-    + (list.length?list.map(row).join(""):(recent.length||popular.length?"":`<div class="empty">No exercises match.</div>`));
+    + (list.length?list.map(row).join(""):(favs.length||recent.length||popular.length?"":`<div class="empty">No exercises match.</div>`));
 }
 function gymPick(id){
   const x=EX.find(e=>e.id===id), a=gym().active; if (!x||!a) return;
@@ -1639,6 +1661,7 @@ document.addEventListener("click", e => {
   const t = e.target.closest("button,[data-close]"); if (!t) return;
   const ds = t.dataset;
   if (ds.close !== undefined && (e.target === t || t.tagName==="BUTTON")) { $("#layer").innerHTML=""; return; }
+  if (ds.exfav){ toggleFav(ds.exfav); return; }
   if (ds.ex){ openExercise(ds.ex); return; }
   if (ds.gymStart !== undefined || ds.gymResume !== undefined){ $("#layer").innerHTML=""; gymStart(); return; }
   if (ds.gymPickOpen !== undefined){ openGymPicker(); return; }
