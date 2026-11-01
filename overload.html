@@ -1,5 +1,13 @@
 <!doctype html><html lang="en"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Enigma</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<meta name="theme-color" content="#111418">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Enigma">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800;900&family=Instrument+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
@@ -259,6 +267,32 @@ main{padding-bottom:168px}
 .qa-sheet .ic svg{width:20px;height:20px}
 .qa-sheet .t{font-weight:700}
 .qa-sheet .d{font-size:13px;color:var(--ink-3)}
+
+/* mobile lock-in: never wider than the screen, no zoom-on-focus, steady touch behaviour */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:8}
+html,body{overflow-x:clip}
+button,a,input,select,label{touch-action:manipulation}
+img,svg,video{max-width:100%}
+.seg{grid-auto-columns:minmax(0,1fr)}
+.seg button{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nav button{min-width:0}
+@media (max-width:959px){ input,select,textarea{font-size:16px} }
+@media (max-width:360px){
+  main{padding-left:12px;padding-right:12px}
+  .nav{padding:0 6px} .nav button{font-size:10px}
+  .seg{grid-auto-columns:minmax(max-content,1fr);overflow-x:auto;scrollbar-width:none}
+  .seg::-webkit-scrollbar{display:none}
+  .seg button{font-size:12.5px;padding:8px 9px;overflow:visible}
+  .gh-clock{font-size:46px}
+  .setrow{grid-template-columns:36px minmax(0,1fr) 62px 52px 36px;gap:6px}
+}
+@media (orientation:landscape) and (max-height:500px){
+  .nav-in{padding:3px 4px} .nav button{padding:4px 0}
+  .fab{width:48px;height:48px;bottom:calc(66px + env(safe-area-inset-bottom,0px))}
+  main{padding-bottom:120px}
+  .sheet{max-height:96%}
+}
 
 /* desktop: floating glass dock, wide two-column content, centred dialogs */
 @media (min-width:960px){
