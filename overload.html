@@ -732,10 +732,19 @@ function actMet(a){
   const p = S.profile;
   return (p && a.minutes>0) ? (a.kcal/((p.weight*a.minutes)/60))+1 : 4;
 }
+let burnQ = "";
+const burnActRow = (p, m) => `<div class="item"><div class="grow"><div class="name">${esc(m.name)}</div><div class="meta">≈ ${fmt(activityKcal(p,m.met,30))} kcal / 30 min</div></div><input type="number" id="xmin-${m.id}" placeholder="min" min="1" inputmode="numeric" style="width:58px;padding:7px 8px"><button class="btn sm primary" data-xadd="${m.id}">Add</button></div>`;
+function burnActRows(p, list){ return list.map(m=>burnActRow(p,m)).join(""); }
+function burnMatches(){ const w=burnQ.toLowerCase().split(/\s+/).filter(Boolean); return MET.filter(m=>w.every(x=>m.name.toLowerCase().includes(x))); }
+function burnResults(p){
+  const list=burnMatches();
+  if (homeBurnTab==="bmr" && !burnQ.trim()) return "";
+  return list.length ? burnActRows(p, list) : `<div class="empty">No activity called "${esc(burnQ)}". Try a shorter word, like "run" or "ball".</div>`;
+}
 function renderBurnCard(p, d, burn){
   let body;
   if (homeBurnTab==="bmr"){
-    body = `<div class="row between" style="margin-bottom:12px">
+    body = `<div id="bres" class="list" style="margin:-6px 0 14px">${burnResults(p)}</div><div class="row between" style="margin-bottom:12px">
       <div><div class="big num" style="font-family:var(--f-display);font-size:42px">${fmt(bmr(p))}</div><div class="small muted">BMR · kcal/day at rest</div></div>
       <div style="text-align:right"><div class="big num" style="font-family:var(--f-display);font-size:30px;color:var(--green)">${fmt(burn.total)}</div><div class="small muted">total burn today</div></div></div>
       ${burnRows(burn)}
@@ -744,14 +753,14 @@ function renderBurnCard(p, d, burn){
     const logged = d.activities.length
       ? d.activities.map(a=>`<div class="item"><span class="dot" style="background:var(--green)"></span><div class="grow"><div class="name">${esc(a.name)}</div><div class="meta num">${fmt(a.kcal)} kcal</div></div><input type="number" data-xedit="${a.id}" value="${a.minutes}" min="1" inputmode="numeric" aria-label="Minutes for ${esc(a.name)}" style="width:58px;padding:7px 8px"><span class="small muted">min</span><button class="x" data-del-act="${a.id}" aria-label="Remove ${esc(a.name)}">✕</button></div>`).join("")
       : `<div class="empty">No extra activities yet today. Add time below.</div>`;
-    const addRows = MET.map(m=>`<div class="item"><div class="grow"><div class="name">${esc(m.name)}</div><div class="meta">≈ ${fmt(activityKcal(p,m.met,30))} kcal / 30 min</div></div><input type="number" id="xmin-${m.id}" placeholder="min" min="1" inputmode="numeric" style="width:58px;padding:7px 8px"><button class="btn sm primary" data-xadd="${m.id}">Add</button></div>`).join("");
     body = `<div class="label" style="margin-bottom:6px">Logged today</div><div class="list" style="margin-bottom:18px">${logged}</div>
-      <div class="label" style="margin-bottom:6px">Add time to an activity</div><div class="list">${addRows}</div>
+      <div class="label" style="margin-bottom:6px">Add time to an activity</div><div class="list" id="bres">${burnResults(p)}</div>
       <p class="small muted" style="margin-top:10px">Enter how long you spent, then Add. Change the minutes on anything logged above to update its calories. Don't add walking — your steps already count it.</p>`;
   }
   return `<section class="card">
     <div class="card-head"><h2>Calories burned</h2></div>
     <div class="seg" role="group" aria-label="Expenditure view" style="margin-bottom:14px"><button data-burntab="bmr" aria-pressed="${homeBurnTab==="bmr"}">BMR</button><button data-burntab="extra" aria-pressed="${homeBurnTab==="extra"}">Extra activities</button></div>
+    <input type="search" id="bq" placeholder="Search activities to add, e.g. football" value="${esc(burnQ)}" autocomplete="off" aria-label="Search activities" style="margin-bottom:14px">
     ${body}
   </section>`;
 }
@@ -1665,7 +1674,7 @@ document.addEventListener("click", e => {
   if (ds.setSteps !== undefined){ day().steps = Math.max(0, r0(+$("#sv").value||0)); save(); $("#layer").innerHTML=""; render(); return; }
   if (ds.open==="act"){ openActivity(); return; }
   if (ds.burntab){ homeBurnTab = ds.burntab; renderHome(); return; }
-  if (ds.xadd){ const m=MET.find(x=>x.id===ds.xadd); const inp=$("#xmin-"+ds.xadd); const mins=Math.max(1,r0(+(inp&&inp.value)||0)); if(!((inp&&inp.value)!=="" && mins>0)){ toast("Enter minutes first"); return; } day().activities.push({id:uid(), name:m.name, minutes:mins, kcal:r0(activityKcal(S.profile,m.met,mins)), met:m.met}); save(); renderHome(); toast(`${m.name} · ${mins} min · +${fmt(activityKcal(S.profile,m.met,mins))} kcal`); return; }
+  if (ds.xadd){ const m=MET.find(x=>x.id===ds.xadd); const inp=$("#xmin-"+ds.xadd); const mins=Math.max(1,r0(+(inp&&inp.value)||0)); if(!((inp&&inp.value)!=="" && mins>0)){ toast("Enter minutes first"); return; } day().activities.push({id:uid(), name:m.name, minutes:mins, kcal:r0(activityKcal(S.profile,m.met,mins)), met:m.met}); burnQ=""; save(); renderHome(); toast(`${m.name} · ${mins} min · +${fmt(activityKcal(S.profile,m.met,mins))} kcal`); return; }
   if (ds.quickAct){ openQuickLog(ds.quickAct); return; }
   if (ds.qpreset){ const i=$("#qmin"); if(i){ i.value=ds.qpreset; i.dispatchEvent(new Event("input")); } return; }
   if (ds.quickLog){ const m=MET.find(x=>x.id===ds.quickLog); const mins=Math.max(1,r0(+$("#qmin").value||0)); if(!(mins>0)) return; day().activities.push({id:uid(), name:m.name, minutes:mins, kcal:r0(activityKcal(S.profile,m.met,mins))}); S.favMin=S.favMin||{}; S.favMin[ds.quickLog]=mins; save(); $("#layer").innerHTML=""; render(); toast(`${m.name} · ${mins} min · +${fmt(activityKcal(S.profile,m.met,mins))} kcal`); return; }
@@ -1706,6 +1715,7 @@ document.addEventListener("input", e => {
   if (e.target.id==="fq") filterFoods(e.target.value);
   if (e.target.id==="exq"){ exQ = e.target.value; exShown = 30; exRenderList(); }
   if (e.target.id==="gpq"){ gpQ = e.target.value; gpRender(); }
+  if (e.target.id==="bq"){ burnQ = e.target.value; const r=$("#bres"); if (r) r.innerHTML = burnResults(S.profile); }
   if (e.target.dataset.gset){ const [i,j]=e.target.dataset.gset.split(":").map(Number), st=gym().active&&gym().active.ex[i]&&gym().active.ex[i].sets[j]; if (st){ st[e.target.dataset.f] = e.target.value===""?null:+e.target.value; save(); } }
   if (e.target.dataset.mult !== undefined){ const est=photoEst||descEst; est.items[+e.target.dataset.mult].mult=+e.target.value; const keep=lastDesc; renderFood(); if($("#dq")) $("#dq").value=keep; }
 });
