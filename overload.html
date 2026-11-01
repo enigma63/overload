@@ -139,6 +139,7 @@ textarea{resize:vertical;min-height:70px}
 .lesson .n{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font:700 13px var(--f-data);background:var(--sunk);flex:none}
 .lesson.done .n{background:var(--green);color:#fff}
 .lesson .grow{flex:1;min-width:0}
+.duo{display:flex;flex-direction:column;gap:14px}
 .ladder{display:flex;flex-direction:column;gap:6px}
 .rung{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:9px;font-size:14px}
 .rung.past{color:var(--ink-3);text-decoration:line-through;text-decoration-color:var(--line)}
@@ -207,6 +208,7 @@ textarea{resize:vertical;min-height:70px}
   main>*{break-inside:avoid;margin-bottom:20px}
   main>:not(.card):not(section),main>.span{column-span:all}
   main>.chat,main>.composer{max-width:820px}
+  .duo{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;align-items:start}
   .nav{top:63px;right:auto;width:var(--side);justify-content:stretch;border-right:1px solid var(--line);background:var(--surface)}
   .nav-in{max-width:none;border-top:0;display:flex;flex-direction:column;gap:2px;padding:16px 12px;background:none}
   .nav button{flex-direction:row;justify-content:flex-start;gap:12px;padding:11px 14px;font-size:14.5px;color:var(--ink-2)}
@@ -873,7 +875,7 @@ function renderPsych(){
     <div style="margin-top:8px">${fc.lessons.map((l,i)=>`<button class="lesson ${S.done["free"+i]?"done":""}" data-course="free" data-lesson="${i}"><span class="n">${S.done["free"+i]?"✓":i+1}</span><span class="grow" style="font-weight:600">${esc(l.t)}</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--ink-3)"><path d="M9 6l6 6-6 6"/></svg></button>`).join("")}</div>
   </section>`;
   if (!S.premium){
-    $("#view").innerHTML = intro + freeCard + `
+    $("#view").innerHTML = intro + `<div class="duo">${freeCard}
     <section class="card" style="text-align:center">
       <div style="width:54px;height:54px;border-radius:50%;background:var(--sunk);display:grid;place-items:center;margin:4px auto 12px;font-size:24px" aria-hidden="true">🔒</div>
       <div class="label" style="color:var(--red)">Enigma Premium</div>
@@ -883,10 +885,10 @@ function renderPsych(){
       <div style="font:900 34px/1 var(--f-display)">₦3,500 <span style="font-size:15px;color:var(--ink-3);font-weight:400;font-family:var(--f-body)">/month</span></div>
       <button class="btn red block" data-unlock-premium style="margin-top:14px">Unlock Premium</button>
       <p class="small muted" style="margin-top:10px">Prototype — tapping unlocks it instantly so you can preview. In the real app this is your paid subscription.</p>
-    </section>`;
+    </section></div>`;
     return;
   }
-  $("#view").innerHTML = intro + freeCard + `
+  $("#view").innerHTML = intro + `<div class="duo">${freeCard}
   <section class="card">
     <div class="card-head"><h2 style="font-size:24px">Core lessons</h2><span class="pill green">Premium ✓</span></div>
     <p class="small muted" style="margin:-4px 0 2px">${c.sub}</p>
@@ -894,7 +896,7 @@ function renderPsych(){
     <div class="bar"><i style="width:${done/c.lessons.length*100}%;background:var(--green)"></i></div>
     <div style="margin-top:8px">${c.lessons.map((l,i)=>`<button class="lesson ${S.done["mind"+i]?"done":""}" data-course="mind" data-lesson="${i}"><span class="n">${S.done["mind"+i]?"✓":i+1}</span><span class="grow" style="font-weight:600">${esc(l.t)}</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--ink-3)"><path d="M9 6l6 6-6 6"/></svg></button>`).join("")}</div>
     <button class="btn ghost sm" data-lock-premium style="margin-top:12px;color:var(--ink-3)">Lock again (demo)</button>
-  </section>`;
+  </section></div>`;
 }
 function openLesson(i){
   const c = COURSES[learnTab], l = c.lessons[i], k = learnTab+i;
