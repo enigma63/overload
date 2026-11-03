@@ -1,5 +1,5 @@
 <!doctype html><html lang="en"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
-<title>Enigma</title>
+<title>Enigma fitness App</title>
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
@@ -50,6 +50,7 @@ button{cursor:pointer}
 .top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line);
   display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 16px}
 .brand{font:900 26px/1 var(--f-display);letter-spacing:.02em;text-transform:uppercase}
+.brand small{display:block;margin-top:3px;font:800 9px/1 var(--f-display);letter-spacing:.2em;color:var(--ink-2)}
 .brand b, .onb h1 b{color:var(--neon);background:var(--pat) center/cover;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;text-shadow:0 1px 2px rgba(0,0,0,.3)}
 .daynav{display:flex;align-items:center;gap:4px}
 .daynav button{width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center}
@@ -187,6 +188,7 @@ textarea{resize:vertical;min-height:70px}
 .onb{position:fixed;inset:0;z-index:30;background:var(--bg);overflow:auto}
 .onb-in{max-width:480px;margin:0 auto;padding:28px 16px 40px;display:flex;flex-direction:column;gap:18px}
 .onb h1{font:900 54px/.9 var(--f-display);text-transform:uppercase;margin:0;text-wrap:balance}
+.onb h1 small{display:block;margin-top:8px;font:800 15px/1 var(--f-display);letter-spacing:.18em;color:var(--ink-2)}
 
 .plates{display:flex;gap:5px;align-items:center}
 .plates i{display:block;width:12px;border-radius:3px}
@@ -334,7 +336,7 @@ img,svg,video{max-width:100%}
 
 <div class="app" id="app">
   <header class="top">
-    <div class="brand">Enig<b>ma</b></div>
+    <div class="brand">Enig<b>ma</b><small>Fitness App</small></div>
     <div class="daynav">
       <button id="prevDay" aria-label="Previous day"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 6l-6 6 6 6"/></svg></button>
       <span id="dayLabel">Today</span>
@@ -1599,7 +1601,7 @@ function readProfile(){
 function renderOnboarding(){
   $("#layer").innerHTML = `<div class="onb"><div class="onb-in">
     <div class="plates" aria-hidden="true"><i style="height:54px;background:var(--red)"></i><i style="height:48px;background:var(--blue)"></i><i style="height:40px;background:var(--yellow)"></i><i style="height:32px;background:var(--green)"></i></div>
-    <h1>Enig<b>ma</b></h1>
+    <h1>Enig<b>ma</b><small>Fitness App</small></h1>
     <p style="color:var(--ink-2);max-width:42ch">Train stronger, eat with a plan, and end each day in a deficit with your protein hit. Start with a few numbers so the app can work out your daily burn.</p>
     <div class="card" style="display:flex;flex-direction:column;gap:14px">${profileForm()}
       <button class="btn red block" data-start>Calculate my targets</button></div>
